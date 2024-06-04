@@ -29,9 +29,9 @@ using namespace __sanitizer;
 
 namespace __msan {
 
-class Decorator: public __sanitizer::SanitizerCommonDecorator {
+class Decorator : public __sanitizer::SanitizerCommonDecorator {
  public:
-  Decorator() : SanitizerCommonDecorator() { }
+  Decorator() : SanitizerCommonDecorator() {}
   const char *Origin() const { return Magenta(); }
   const char *Name() const { return Green(); }
 };
@@ -99,8 +99,10 @@ static void DescribeOrigin(u32 id) {
   }
 }
 
+// [syx]
 void ReportUMR(StackTrace *stack, u32 origin) {
-  if (!__msan::flags()->report_umrs) return;
+  if (!__msan::flags()->report_umrs)
+    return;
 
   ScopedErrorReportLock l;
 
@@ -114,6 +116,8 @@ void ReportUMR(StackTrace *stack, u32 origin) {
   }
   ReportErrorSummary("use-of-uninitialized-value", stack);
 }
+
+void ReportOOB() { Report("WARNING: MemorySanitizer: out-of-bounary\n"); }
 
 void ReportExpectedUMRNotFound(StackTrace *stack) {
   ScopedErrorReportLock l;
@@ -157,8 +161,10 @@ class OriginSet {
   int insert(u32 o) {
     // Scan from the end for better locality.
     for (int i = next_id_ - 1; i >= 0; --i)
-      if (origins_[i] == o) return i;
-    if (next_id_ == kMaxSize_) return OVERFLOW;
+      if (origins_[i] == o)
+        return i;
+    if (next_id_ == kMaxSize_)
+      return OVERFLOW;
     int id = next_id_++;
     origins_[id] = o;
     return id;
@@ -228,7 +234,8 @@ void DescribeMemoryRange(const void *x, uptr size) {
       Printf("..");
     } else {
       unsigned char v = *(unsigned char *)s;
-      if (v) last_quad_poisoned = true;
+      if (v)
+        last_quad_poisoned = true;
       Printf("%x%x", v >> 4, v & 0xf);
     }
     // Group end.
@@ -247,7 +254,8 @@ void DescribeMemoryRange(const void *x, uptr size) {
         for (int i = 0; i < 4; ++i) {
           char c = OriginSet::asChar(origin_ids[i]);
           Printf("%c", c);
-          if (i != 3) Printf(" ");
+          if (i != 3)
+            Printf(" ");
         }
         Printf("|");
       }

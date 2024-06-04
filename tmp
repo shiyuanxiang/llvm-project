@@ -1,0 +1,40 @@
+=============================msan.out=============================
+==375755==[msan_poisoning.cpp] SetShadow: 0x7fff42f5d000 8388608 0
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fbd4000 8320 0
+==375755==[msan_poisoning.cpp] SetShadow: 0x7fff4375b500 16 0
+==375755==[msan_poisoning.cpp] SetShadow: 0x731000000000 72704 255
+==375755==[msan_poisoning.cpp] SetShadow: 0x708000000000 120 255
+==375755==[msan_poisoning.cpp] SetShadow: 0x701000000000 10 255
+==375755==[msan_poisoning.cpp] SetShadow: 0x708000000000 120 0
+==375755==[msan_poisoning.cpp] SetShadow: 0x718000000000 1024 255
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc76a0 120 0
+==375755==[msan_poisoning.cpp] SetShadow: 0x708000000000 120 255
+==375755==[msan_poisoning.cpp] SetShadow: 0x701000000000 10 255
+
+//free all
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc76a0 120 0
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc75c0 120 0
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc75c0 120 0
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc76a0 120 0
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc75c0 120 0
+
+==375755==[msan_poisoning.cpp] SetShadow: 0x7f952fdc75c0 120 0
+
+==625776==[msan_poisoning.cpp] SetShadow: 0x7ffd1b14d000 8388608 0
+==625776==[msan_poisoning.cpp] SetShadow: 0x7f0c9132e000 8320 0
+==625776==[msan_poisoning.cpp] SetShadow: 0x7ffd1b94afa0 16 0
+==625776==[msan_poisoning.cpp] SetShadow: 0x731000000000 72704 255
+==625776==[msan_poisoning.cpp] SetShadow: 0x713000000000 400 255
+==625776==[msan_poisoning.cpp] SetShadow: 0x713000000000 400 255
+==625776==[msan_poisoning.cpp] SetShadow: 0x7f0c9132e6c0 4 0
+
+
+==809342==[msan_poisoning.cpp] SetShadow: 0x7ffd043b6000 8388608 0
+==809342==[msan_poisoning.cpp] SetShadow: 0x7f8ba62ae000 8320 0
+==809342==[msan_poisoning.cpp] SetShadow: 0x7ffd04bb4700 16 0
+==809342==[msan_poisoning.cpp] SetShadow: 0x731000000000 72704 255

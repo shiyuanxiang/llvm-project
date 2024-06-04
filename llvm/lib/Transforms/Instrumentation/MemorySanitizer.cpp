@@ -839,7 +839,8 @@ static Constant *getOrInsertGlobal(Module &M, StringRef Name, Type *Ty) {
 }
 
 /// Insert declarations for userspace-specific functions and globals.
-void MemorySanitizer::createUserspaceApi(Module &M, const TargetLibraryInfo &TLI) {
+void MemorySanitizer::createUserspaceApi(Module &M,
+                                         const TargetLibraryInfo &TLI) {
   IRBuilder<> IRB(*C);
 
   // Create the callback.
@@ -909,7 +910,8 @@ void MemorySanitizer::createUserspaceApi(Module &M, const TargetLibraryInfo &TLI
 }
 
 /// Insert extern declaration of runtime-provided functions and globals.
-void MemorySanitizer::initializeCallbacks(Module &M, const TargetLibraryInfo &TLI) {
+void MemorySanitizer::initializeCallbacks(Module &M,
+                                          const TargetLibraryInfo &TLI) {
   // Only do this once.
   if (CallbacksInitialized)
     return;
@@ -1243,7 +1245,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
       Value *RoundUp = IRB.CreateAdd(Size, IRB.getInt32(kOriginSize - 1));
       Value *End = IRB.CreateUDiv(RoundUp, IRB.getInt32(kOriginSize));
       auto [InsertPt, Index] =
-        SplitBlockAndInsertSimpleForLoop(End, &*IRB.GetInsertPoint());
+          SplitBlockAndInsertSimpleForLoop(End, &*IRB.GetInsertPoint());
       IRB.SetInsertPoint(InsertPt);
 
       Value *GEP = IRB.CreateGEP(MS.OriginTy, OriginPtr, Index);
@@ -1390,6 +1392,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     // at the very end.
   }
 
+  // [syx] 3
   void materializeOneCheck(IRBuilder<> &IRB, Value *ConvertedShadow,
                            Value *Origin) {
     const DataLayout &DL = F.getParent()->getDataLayout();
@@ -1417,6 +1420,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     }
   }
 
+  // [syx] 2
   void materializeInstructionChecks(
       ArrayRef<ShadowOriginAndInsertPoint> InstructionChecks) {
     const DataLayout &DL = F.getParent()->getDataLayout();
@@ -1436,6 +1440,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
           // Skip, value is initialized or const shadow is ignored.
           continue;
         }
+        //[syx] 3
         if (llvm::isKnownNonZero(ConvertedShadow, DL)) {
           // Report as the value is definitely uninitialized.
           insertWarningFn(IRB, ShadowData.Origin);
@@ -1469,6 +1474,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     }
   }
 
+  // [syx] 1
   void materializeChecks() {
     llvm::stable_sort(InstrumentationList,
                       [](const ShadowOriginAndInsertPoint &L,
@@ -1541,14 +1547,25 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     // instrumenting only allocas.
     if (InstrumentLifetimeStart) {
       for (auto Item : LifetimeStartList) {
+        // errs() << "[MemorySanitizer.cpp] 2 "
+        //           "MemorySanitizerVisitor::runOnFunction() "
+        //           "AllocaInst *Item.second : "
+        //        << *Item.second << " *Item.first : " << *Item.first << "\n";
         instrumentAlloca(*Item.second, Item.first);
+
         AllocaSet.remove(Item.second);
       }
     }
     // Poison the allocas for which we didn't instrument the corresponding
     // lifetime intrinsics.
-    for (AllocaInst *AI : AllocaSet)
+    for (AllocaInst *AI : AllocaSet) {
+      // errs()
+      //     << "[MemorySanitizer.cpp] 1 MemorySanitizerVisitor::runOnFunction()
+      //     "
+      //        "AllocaInst *AI : "
+      //     << *AI << "\n";
       instrumentAlloca(*AI);
+    }
 
     // Insert shadow value checks.
     materializeChecks();
@@ -1643,7 +1660,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
       if (isa<ScalableVectorType>(V->getType()))
         return convertShadowToScalar(IRB.CreateOrReduce(V), IRB);
       unsigned BitWidth =
-        V->getType()->getPrimitiveSizeInBits().getFixedValue();
+          V->getType()->getPrimitiveSizeInBits().getFixedValue();
       return IRB.CreateBitCast(V, IntegerType::get(*MS.C, BitWidth));
     }
     return V;
@@ -1682,7 +1699,8 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
   Constant *constToIntPtr(Type *IntPtrTy, uint64_t C) const {
     if (VectorType *VectTy = dyn_cast<VectorType>(IntPtrTy)) {
       return ConstantVector::getSplat(
-          VectTy->getElementCount(), constToIntPtr(VectTy->getElementType(), C));
+          VectTy->getElementCount(),
+          constToIntPtr(VectTy->getElementType(), C));
     }
     assert(IntPtrTy == MS.IntptrTy);
     return ConstantInt::get(MS.IntptrTy, C);
@@ -1865,6 +1883,14 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
 
   /// Set SV to be the shadow value for V.
   void setShadow(Value *V, Value *SV) {
+    if (!isa<Instruction>(V) && !isa<Argument>(V) && !isa<Constant>(V)) {
+    } else {
+      errs() << "[MemorySanitizer.cpp] MemorySanitizerVisitor::setShadow() V: "
+             << *V << " \n";
+    }
+    // errs() << "[MemorySanitizer.cpp] MemorySanitizerVisitor::setShadow() V: "
+    //        << *V << " SV: " << *SV << "\n";
+
     assert(!ShadowMap.count(V) && "Values may only have one shadow");
     ShadowMap[V] = PropagateShadow ? SV : getCleanShadow(V);
   }
@@ -2084,7 +2110,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     InstrumentationList.push_back(
         ShadowOriginAndInsertPoint(Shadow, Origin, OrigIns));
   }
-
+  // [syx]
   /// Remember the place where a shadow check should be inserted.
   ///
   /// This location will be later instrumented with a check that will print a
@@ -4373,6 +4399,11 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
   }
 
   void poisonAllocaUserspace(AllocaInst &I, IRBuilder<> &IRB, Value *Len) {
+
+    errs() << "[MemorySanitizer.cpp] poisonAllocaUserspace: I: " << I << "\n";
+    errs() << "[MemorySanitizer.cpp] poisonAllocaUserspace: Len: " << *Len
+           << "\n";
+
     if (PoisonStack && ClPoisonStackWithCall) {
       IRB.CreateCall(MS.MsanPoisonStackFn,
                      {IRB.CreatePointerCast(&I, IRB.getInt8PtrTy()), Len});
@@ -4573,7 +4604,7 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
       return;
     Value *Ptr = IRB.CreatePointerCast(Operand, IRB.getInt8PtrTy());
     Value *SizeVal =
-      IRB.CreateTypeSize(MS.IntptrTy, DL.getTypeStoreSize(ElemTy));
+        IRB.CreateTypeSize(MS.IntptrTy, DL.getTypeStoreSize(ElemTy));
     IRB.CreateCall(MS.MsanInstrumentAsmStoreFn, {Ptr, SizeVal});
   }
 

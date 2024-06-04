@@ -13,16 +13,16 @@
 // inside it.
 //===----------------------------------------------------------------------===//
 
+#include <stdarg.h>
+#include <stdio.h>
+
 #include "sanitizer_common.h"
 #include "sanitizer_flags.h"
 #include "sanitizer_libc.h"
 
-#include <stdio.h>
-#include <stdarg.h>
-
-#if SANITIZER_WINDOWS && defined(_MSC_VER) && _MSC_VER < 1800 &&               \
-      !defined(va_copy)
-# define va_copy(dst, src) ((dst) = (src))
+#if SANITIZER_WINDOWS && defined(_MSC_VER) && _MSC_VER < 1800 && \
+    !defined(va_copy)
+#  define va_copy(dst, src) ((dst) = (src))
 #endif
 
 namespace __sanitizer {
@@ -70,7 +70,8 @@ static int AppendNumber(char **buff, const char *buff_end, u64 absolute_value,
     char c = (pad_with_zero || pos == 0) ? '0' : ' ';
     result += AppendChar(buff, buff_end, c);
   }
-  if (negative && !pad_with_zero) result += AppendChar(buff, buff_end, '-');
+  if (negative && !pad_with_zero)
+    result += AppendChar(buff, buff_end, '-');
   for (; pos >= 0; pos--) {
     char digit = static_cast<char>(num_buffer[pos]);
     digit = (digit < 10) ? '0' + digit : (uppercase ? 'A' : 'a') + digit - 10;
@@ -94,7 +95,6 @@ static int AppendSignedDecimal(char **buff, const char *buff_end, s64 num,
                       false /* uppercase */);
 }
 
-
 // Use the fact that explicitly requesting 0 width (%0s) results in UB and
 // interpret width == 0 as "no width requested":
 // width == 0 - no width requested
@@ -111,8 +111,7 @@ static int AppendString(char **buff, const char *buff_end, int width,
     result += AppendChar(buff, buff_end, *s);
   }
   // Only the left justified strings are supported.
-  while (width < -result)
-    result += AppendChar(buff, buff_end, ' ');
+  while (width < -result) result += AppendChar(buff, buff_end, ' ');
   return result;
 }
 
@@ -125,8 +124,7 @@ static int AppendPointer(char **buff, const char *buff_end, u64 ptr_value) {
   return result;
 }
 
-int VSNPrintf(char *buff, int buff_length,
-              const char *format, va_list args) {
+int VSNPrintf(char *buff, int buff_length, const char *format, va_list args) {
   static const char *kPrintfFormatsHelp =
       "Supported Printf formats: %([0-9]*)?(z|l|ll)?{d,u,x,X}; %p; "
       "%[-]([0-9]*)?(\\.\\*)?s; %c\nProvided format: ";
@@ -174,8 +172,8 @@ int VSNPrintf(char *buff, int buff_length,
                    : have_z ? va_arg(args, sptr)
                    : have_l ? va_arg(args, long)
                             : va_arg(args, int);
-        result += AppendSignedDecimal(&buff, buff_end, dval, width,
-                                      pad_with_zero);
+        result +=
+            AppendSignedDecimal(&buff, buff_end, dval, width, pad_with_zero);
         break;
       }
       case 'u':
@@ -200,7 +198,7 @@ int VSNPrintf(char *buff, int buff_length,
         // Only left-justified width is supported.
         CHECK(!have_width || left_justified);
         result += AppendString(&buff, buff_end, left_justified ? -width : width,
-                               precision, va_arg(args, char*));
+                               precision, va_arg(args, char *));
         break;
       }
       case 'c': {
@@ -208,7 +206,7 @@ int VSNPrintf(char *buff, int buff_length,
         result += AppendChar(&buff, buff_end, va_arg(args, int));
         break;
       }
-      case '%' : {
+      case '%': {
         RAW_CHECK_VA(!have_flags, kPrintfFormatsHelp, format);
         result += AppendChar(&buff, buff_end, '%');
         break;
@@ -272,8 +270,8 @@ static void NOINLINE SharedPrintfCodeNoBuffer(bool append_pid,
       int pid = internal_getpid();
       const char *exe_name = GetProcessName();
       if (common_flags()->log_exe_name && exe_name) {
-        needed_length += internal_snprintf(buffer, buffer_size,
-                                           "==%s", exe_name);
+        needed_length +=
+            internal_snprintf(buffer, buffer_size, "==%s", exe_name);
         if (needed_length >= buffer_size)
           continue;
       }
@@ -358,4 +356,4 @@ void InternalScopedString::append(const char *format, ...) {
   CHECK_EQ(buffer_[length()], '\0');
 }
 
-} // namespace __sanitizer
+}  // namespace __sanitizer

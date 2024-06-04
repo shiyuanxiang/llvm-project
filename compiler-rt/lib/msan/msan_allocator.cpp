@@ -63,11 +63,11 @@ struct AP32 {
 };
 typedef SizeClassAllocator32<AP32> PrimaryAllocator;
 #elif defined(__x86_64__)
-#if SANITIZER_NETBSD || SANITIZER_LINUX
+#  if SANITIZER_NETBSD || SANITIZER_LINUX
 static const uptr kAllocatorSpace = 0x700000000000ULL;
-#else
+#  else
 static const uptr kAllocatorSpace = 0x600000000000ULL;
-#endif
+#  endif
 static const uptr kMaxAllowedMallocSize = 8UL << 30;
 
 struct AP64 {  // Allocator64 parameters. Deliberately using a short name.
@@ -257,7 +257,7 @@ void MsanDeallocate(StackTrace *stack, void *p) {
 
 static void *MsanReallocate(StackTrace *stack, void *old_p, uptr new_size,
                             uptr alignment) {
-  Metadata *meta = reinterpret_cast<Metadata*>(allocator.GetMetaData(old_p));
+  Metadata *meta = reinterpret_cast<Metadata *>(allocator.GetMetaData(old_p));
   uptr old_size = meta->requested_size;
   uptr actually_allocated_size = allocator.GetActuallyAllocatedSize(old_p);
   if (new_size <= actually_allocated_size) {
@@ -305,9 +305,11 @@ static const void *AllocationBegin(const void *p) {
 }
 
 static uptr AllocationSize(const void *p) {
-  if (!p) return 0;
+  if (!p)
+    return 0;
   const void *beg = allocator.GetBlockBegin(p);
-  if (beg != p) return 0;
+  if (beg != p)
+    return 0;
   Metadata *b = (Metadata *)allocator.GetMetaData(p);
   return b->requested_size;
 }
@@ -315,7 +317,7 @@ static uptr AllocationSize(const void *p) {
 static uptr AllocationSizeFast(const void *p) {
   return reinterpret_cast<Metadata *>(allocator.GetMetaData(p))->requested_size;
 }
-
+// [syx] to-do
 void *msan_malloc(uptr size, StackTrace *stack) {
   return SetErrnoOnNull(MsanAllocate(stack, size, sizeof(u64), false));
 }
@@ -397,7 +399,7 @@ int msan_posix_memalign(void **memptr, uptr alignment, uptr size,
   return 0;
 }
 
-} // namespace __msan
+}  // namespace __msan
 
 using namespace __msan;
 

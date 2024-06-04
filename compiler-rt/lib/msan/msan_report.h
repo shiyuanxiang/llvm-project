@@ -19,7 +19,7 @@
 #include "sanitizer_common/sanitizer_stacktrace.h"
 
 namespace __msan {
-
+void ReportOOB();
 void ReportUMR(StackTrace *stack, u32 origin);
 void ReportExpectedUMRNotFound(StackTrace *stack);
 void ReportStats();

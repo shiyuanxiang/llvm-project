@@ -30,8 +30,8 @@
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "WindowsMMap.h"
+#include <windows.h>
 #else
 #include <sys/file.h>
 #include <sys/mman.h>
@@ -85,7 +85,7 @@ static int fd = -1;
 
 typedef void (*fn_ptr)(void);
 
-typedef void* dynamic_object_id;
+typedef void *dynamic_object_id;
 // The address of this variable identifies a given dynamic object.
 static dynamic_object_id current_id;
 #define CURRENT_ID (&current_id)
@@ -93,7 +93,7 @@ static dynamic_object_id current_id;
 struct fn_node {
   dynamic_object_id id;
   fn_ptr fn;
-  struct fn_node* next;
+  struct fn_node *next;
 };
 
 struct fn_list {
@@ -101,7 +101,8 @@ struct fn_list {
 };
 
 /*
- * A list of functions to write out the data, shared between all dynamic objects.
+ * A list of functions to write out the data, shared between all dynamic
+ * objects.
  */
 struct fn_list writeout_fn_list;
 
@@ -110,8 +111,8 @@ struct fn_list writeout_fn_list;
  */
 struct fn_list reset_fn_list;
 
-static void fn_list_insert(struct fn_list* list, fn_ptr fn) {
-  struct fn_node* new_node = malloc(sizeof(struct fn_node));
+static void fn_list_insert(struct fn_list *list, fn_ptr fn) {
+  struct fn_node *new_node = malloc(sizeof(struct fn_node));
   new_node->fn = fn;
   new_node->next = NULL;
   new_node->id = CURRENT_ID;
@@ -124,10 +125,10 @@ static void fn_list_insert(struct fn_list* list, fn_ptr fn) {
   }
 }
 
-static void fn_list_remove(struct fn_list* list) {
-  struct fn_node* curr = list->head;
-  struct fn_node* prev = NULL;
-  struct fn_node* next = NULL;
+static void fn_list_remove(struct fn_list *list) {
+  struct fn_node *curr = list->head;
+  struct fn_node *prev = NULL;
+  struct fn_node *next = NULL;
 
   while (curr) {
     next = curr->next;
@@ -155,9 +156,11 @@ static void fn_list_remove(struct fn_list* list) {
 }
 
 static void resize_write_buffer(uint64_t size) {
-  if (!new_file) return;
+  if (!new_file)
+    return;
   size += cur_pos;
-  if (size <= cur_buffer_size) return;
+  if (size <= cur_buffer_size)
+    return;
   size = (size - 1) / WRITE_BUFFER_SIZE + 1;
   size *= WRITE_BUFFER_SIZE;
   write_buffer = realloc(write_buffer, size);
@@ -170,15 +173,13 @@ static void write_bytes(const char *s, size_t len) {
   cur_pos += len;
 }
 
-static void write_32bit_value(uint32_t i) {
-  write_bytes((char*)&i, 4);
-}
+static void write_32bit_value(uint32_t i) { write_bytes((char *)&i, 4); }
 
 static void write_64bit_value(uint64_t i) {
   // GCOV uses a lo-/hi-word format even on big-endian systems.
   // See also GCOVBuffer::readInt64 in LLVM.
-  uint32_t lo = (uint32_t) i;
-  uint32_t hi = (uint32_t) (i >> 32);
+  uint32_t lo = (uint32_t)i;
+  uint32_t hi = (uint32_t)(i >> 32);
   write_32bit_value(lo);
   write_32bit_value(hi);
 }
@@ -189,7 +190,7 @@ static uint32_t read_32bit_value(void) {
   if (new_file)
     return (uint32_t)-1;
 
-  val = *(uint32_t*)&write_buffer[cur_pos];
+  val = *(uint32_t *)&write_buffer[cur_pos];
   cur_pos += 4;
   return val;
 }
@@ -234,7 +235,9 @@ static int map_file(void) {
   else
     mmap_fd = (HANDLE)_get_osfhandle(fd);
 
-  mmap_handle = CreateFileMapping(mmap_fd, NULL, PAGE_READWRITE, DWORD_HI(file_size), DWORD_LO(file_size), NULL);
+  mmap_handle =
+      CreateFileMapping(mmap_fd, NULL, PAGE_READWRITE, DWORD_HI(file_size),
+                        DWORD_LO(file_size), NULL);
   if (mmap_handle == NULL) {
     fprintf(stderr, "profiling: %s: cannot create file mapping: %lu\n",
             filename, GetLastError());
@@ -249,8 +252,8 @@ static int map_file(void) {
     return -1;
   }
 #else
-  write_buffer = mmap(0, file_size, PROT_READ | PROT_WRITE,
-                      MAP_FILE | MAP_SHARED, fd, 0);
+  write_buffer =
+      mmap(0, file_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0);
   if (write_buffer == (void *)-1) {
     int errnum = errno;
     fprintf(stderr, "profiling: %s: cannot map: %s\n", filename,
@@ -380,7 +383,8 @@ void llvm_gcda_emit_function(uint32_t ident, uint32_t func_checksum,
 #ifdef DEBUG_GCDAPROFILING
   fprintf(stderr, "llvmgcda: function id=0x%08x\n", ident);
 #endif
-  if (!output_file) return;
+  if (!output_file)
+    return;
 
   /* function tag */
   write_32bit_value(GCOV_TAG_FUNCTION);
@@ -398,23 +402,26 @@ void llvm_gcda_emit_arcs(uint32_t num_counters, uint64_t *counters) {
   uint32_t val = 0;
   uint64_t save_cur_pos = cur_pos;
 
-  if (!output_file) return;
+  if (!output_file)
+    return;
 
   val = read_32bit_value();
 
   if (val != (uint32_t)-1) {
     /* There are counters present in the file. Merge them. */
     if (val != GCOV_TAG_COUNTER_ARCS) {
-      fprintf(stderr, "profiling: %s: cannot merge previous GCDA file: "
-                      "corrupt arc tag (0x%08x)\n",
+      fprintf(stderr,
+              "profiling: %s: cannot merge previous GCDA file: "
+              "corrupt arc tag (0x%08x)\n",
               filename, val);
       return;
     }
 
     val = read_32bit_value();
     if (val == (uint32_t)-1 || val / 2 != num_counters) {
-      fprintf(stderr, "profiling: %s: cannot merge previous GCDA file: "
-                      "mismatched number of counters (%d)\n",
+      fprintf(stderr,
+              "profiling: %s: cannot merge previous GCDA file: "
+              "mismatched number of counters (%d)\n",
               filename, val);
       return;
     }
@@ -446,11 +453,13 @@ void llvm_gcda_emit_arcs(uint32_t num_counters, uint64_t *counters) {
 COMPILER_RT_VISIBILITY
 void llvm_gcda_summary_info(void) {
   uint32_t runs = 1;
-  static uint32_t run_counted = 0; // We only want to increase the run count once.
+  static uint32_t run_counted =
+      0; // We only want to increase the run count once.
   uint32_t val = 0;
   uint64_t save_cur_pos = cur_pos;
 
-  if (!output_file) return;
+  if (!output_file)
+    return;
 
   val = read_32bit_value();
 
@@ -559,7 +568,8 @@ void llvm_writeout_files(void) {
 #endif
 __attribute__((destructor(100)))
 #endif
-static void llvm_writeout_and_clear(void) {
+static void
+llvm_writeout_and_clear(void) {
   llvm_writeout_files();
   fn_list_remove(&writeout_fn_list);
 }
