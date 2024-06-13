@@ -1883,16 +1883,15 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
 
   /// Set SV to be the shadow value for V.
   void setShadow(Value *V, Value *SV) {
+    // errs() << "[MemorySanitizer.cpp] MemorySanitizerVisitor::setShadow() V: "
+    //        << *V << " SV: " << *SV << "\n";
+    assert(!ShadowMap.count(V) && "Values may only have one shadow");
+    ShadowMap[V] = PropagateShadow ? SV : getCleanShadow(V);
     if (!isa<Instruction>(V) && !isa<Argument>(V) && !isa<Constant>(V)) {
     } else {
       errs() << "[MemorySanitizer.cpp] MemorySanitizerVisitor::setShadow() V: "
              << *V << " \n";
     }
-    // errs() << "[MemorySanitizer.cpp] MemorySanitizerVisitor::setShadow() V: "
-    //        << *V << " SV: " << *SV << "\n";
-
-    assert(!ShadowMap.count(V) && "Values may only have one shadow");
-    ShadowMap[V] = PropagateShadow ? SV : getCleanShadow(V);
   }
 
   /// Set Origin to be the origin value for V.
