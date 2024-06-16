@@ -60,7 +60,7 @@ static bool runCGProfilePass(
     Count = SaturatingAdd(Count, NewCount);
   };
   // Ignore error here.  Indirect calls are ignored if this fails.
-  (void)(bool) Symtab.create(M);
+  (void)(bool)Symtab.create(M);
   for (auto &F : M) {
     // Avoid extra cost of running passes for BFI when the function doesn't have
     // entry count. Since LazyBlockFrequencyInfoPass only exists in LPM, check
