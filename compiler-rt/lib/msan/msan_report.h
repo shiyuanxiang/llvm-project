@@ -21,6 +21,7 @@
 namespace __msan {
 
 void ReportUMR(StackTrace *stack, u32 origin);
+void ReportOOB(StackTrace *stack, u32 origin);
 void ReportExpectedUMRNotFound(StackTrace *stack);
 void ReportStats();
 void ReportAtExitStatistics();

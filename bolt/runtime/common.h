@@ -21,12 +21,12 @@
 
 typedef __SIZE_TYPE__ size_t;
 #define __SSIZE_TYPE__                                                         \
-  __typeof__(_Generic((__SIZE_TYPE__)0, unsigned long long int                 \
-                      : (long long int)0, unsigned long int                    \
-                      : (long int)0, unsigned int                              \
-                      : (int)0, unsigned short                                 \
-                      : (short)0, unsigned char                                \
-                      : (signed char)0))
+  __typeof__(_Generic((__SIZE_TYPE__)0,                                        \
+      unsigned long long int: (long long int)0,                                \
+      unsigned long int: (long int)0,                                          \
+      unsigned int: (int)0,                                                    \
+      unsigned short: (short)0,                                                \
+      unsigned char: (signed char)0))
 typedef __SSIZE_TYPE__ ssize_t;
 
 typedef unsigned long long uint64_t;
@@ -137,7 +137,7 @@ uint64_t __read(uint64_t fd, const void *buf, uint64_t count) {
 #define READ_SYSCALL 0
 #endif
   __asm__ __volatile__("movq $" STRINGIFY(READ_SYSCALL) ", %%rax\n"
-                       "syscall\n"
+                                                        "syscall\n"
                        : "=a"(ret)
                        : "D"(fd), "S"(buf), "d"(count)
                        : "cc", "rcx", "r11", "memory");
@@ -152,7 +152,7 @@ uint64_t __write(uint64_t fd, const void *buf, uint64_t count) {
 #define WRITE_SYSCALL 1
 #endif
   __asm__ __volatile__("movq $" STRINGIFY(WRITE_SYSCALL) ", %%rax\n"
-                       "syscall\n"
+                                                         "syscall\n"
                        : "=a"(ret)
                        : "D"(fd), "S"(buf), "d"(count)
                        : "cc", "rcx", "r11", "memory");
@@ -171,7 +171,7 @@ void *__mmap(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags,
   register uint64_t r9 asm("r9") = offset;
   register uint64_t r10 asm("r10") = flags;
   __asm__ __volatile__("movq $" STRINGIFY(MMAP_SYSCALL) ", %%rax\n"
-                       "syscall\n"
+                                                        "syscall\n"
                        : "=a"(ret)
                        : "D"(addr), "S"(size), "d"(prot), "r"(r10), "r"(r8),
                          "r"(r9)
@@ -187,7 +187,7 @@ uint64_t __munmap(void *addr, uint64_t size) {
 #endif
   uint64_t ret;
   __asm__ __volatile__("movq $" STRINGIFY(MUNMAP_SYSCALL) ", %%rax\n"
-                       "syscall\n"
+                                                          "syscall\n"
                        : "=a"(ret)
                        : "D"(addr), "S"(size)
                        : "cc", "rcx", "r11", "memory");
@@ -224,7 +224,7 @@ uint64_t __exit(uint64_t code) {
 #endif
   uint64_t ret;
   __asm__ __volatile__("movq $" STRINGIFY(EXIT_SYSCALL) ", %%rax\n"
-                       "syscall\n"
+                                                        "syscall\n"
                        : "=a"(ret)
                        : "D"(code)
                        : "cc", "rcx", "r11", "memory");

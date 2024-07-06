@@ -17,7 +17,7 @@
 
 // The full explanation of the memory mapping could be found here:
 // https://github.com/google/sanitizers/wiki/AddressSanitizerAlgorithm
-//
+// [syx]
 // Typical shadow mapping on Linux/x86_64 with SHADOW_OFFSET == 0x00007fff8000:
 // || `[0x10007fff8000, 0x7fffffffffff]` || HighMem    ||
 // || `[0x02008fff7000, 0x10007fff7fff]` || HighShadow ||

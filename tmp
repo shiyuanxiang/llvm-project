@@ -1,0 +1,39 @@
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2ffde1941000, shadow_end=0x2ffde2141000 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc167585000, shadow_end=0x2fc167587080 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2ffde213f0d0, shadow_end=0x2ffde213f0e0 value=0
+==24326==[msan_allocator.cpp] MsanAllocate: invoke __msan_poison with allocated=0x731000000000, size=72704
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x231000000000, shadow_end=0x231000011c00 value=255
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_allocator.cpp] MsanAllocate: invoke __msan_poison with allocated=0x703000000000, size=48
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x203000000000, shadow_end=0x203000000030 value=255
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x203000000000, shadow_end=0x203000000030 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_allocator.cpp] MsanAllocate: invoke __msan_poison with allocated=0x718000000000, size=1024
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x218000000000, shadow_end=0x218000000400 value=255
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+Uninitialized value: 0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677786a0, shadow_end=0x2fc167778718 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x203000000000, shadow_end=0x203000000030 value=255
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677786a0, shadow_end=0x2fc167778718 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677785c0, shadow_end=0x2fc167778638 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677785c0, shadow_end=0x2fc167778638 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677786a0, shadow_end=0x2fc167778718 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677785c0, shadow_end=0x2fc167778638 value=0
+==24326==[msan_poisoning.cpp] SetShadow: ---------------------, shadow_end=0x2fc1675856c4 value=0
+==24326==[msan_poisoning.cpp] SetShadow: shadow_beg=0x2fc1677785c0, shadow_end=0x2fc167778638 value=0
+(base)  syx@syx-Super-Server  ~/sanitizer/tmp/test  

@@ -11,16 +11,17 @@
 // MemorySanitizer allocator.
 //===----------------------------------------------------------------------===//
 
+#include "msan_allocator.h"
+
+#include "msan.h"
+#include "msan_origin.h"
+#include "msan_poisoning.h"
+#include "msan_thread.h"
 #include "sanitizer_common/sanitizer_allocator.h"
 #include "sanitizer_common/sanitizer_allocator_checks.h"
 #include "sanitizer_common/sanitizer_allocator_interface.h"
 #include "sanitizer_common/sanitizer_allocator_report.h"
 #include "sanitizer_common/sanitizer_errno.h"
-#include "msan.h"
-#include "msan_allocator.h"
-#include "msan_origin.h"
-#include "msan_thread.h"
-#include "msan_poisoning.h"
 
 namespace __msan {
 
@@ -59,12 +60,12 @@ struct AP32 {
 };
 typedef SizeClassAllocator32<AP32> PrimaryAllocator;
 #elif defined(__x86_64__)
-#if SANITIZER_NETBSD || \
-    (SANITIZER_LINUX && !defined(MSAN_LINUX_X86_64_OLD_MAPPING))
+#  if SANITIZER_NETBSD || \
+      (SANITIZER_LINUX && !defined(MSAN_LINUX_X86_64_OLD_MAPPING))
 static const uptr kAllocatorSpace = 0x700000000000ULL;
-#else
+#  else
 static const uptr kAllocatorSpace = 0x600000000000ULL;
-#endif
+#  endif
 static const uptr kMaxAllowedMallocSize = 8UL << 30;
 
 struct AP64 {  // Allocator64 parameters. Deliberately using a short name.
@@ -184,9 +185,15 @@ static void *MsanAllocate(StackTrace *stack, uptr size, uptr alignment,
   Metadata *meta =
       reinterpret_cast<Metadata *>(allocator.GetMetaData(allocated));
   meta->requested_size = size;
+  // [syx]
+
   if (zeroise) {
     __msan_clear_and_unpoison(allocated, size);
   } else if (flags()->poison_in_malloc) {
+    // Report(
+    //     "[msan_allocator.cpp] MsanAllocate: invoke __msan_poison with "
+    //     "allocated=%p, size=%zu, value=%d\n",
+    //     allocated, size, __msan::flags()->poison_heap_with_zeroes);
     __msan_poison(allocated, size);
     if (__msan_get_track_origins()) {
       stack->tag = StackTrace::TAG_ALLOC;
@@ -230,7 +237,7 @@ void MsanDeallocate(StackTrace *stack, void *p) {
 
 static void *MsanReallocate(StackTrace *stack, void *old_p, uptr new_size,
                             uptr alignment) {
-  Metadata *meta = reinterpret_cast<Metadata*>(allocator.GetMetaData(old_p));
+  Metadata *meta = reinterpret_cast<Metadata *>(allocator.GetMetaData(old_p));
   uptr old_size = meta->requested_size;
   uptr actually_allocated_size = allocator.GetActuallyAllocatedSize(old_p);
   if (new_size <= actually_allocated_size) {
@@ -263,9 +270,11 @@ static void *MsanCalloc(StackTrace *stack, uptr nmemb, uptr size) {
 }
 
 static uptr AllocationSize(const void *p) {
-  if (!p) return 0;
+  if (!p)
+    return 0;
   const void *beg = allocator.GetBlockBegin(p);
-  if (beg != p) return 0;
+  if (beg != p)
+    return 0;
   Metadata *b = (Metadata *)allocator.GetMetaData(p);
   return b->requested_size;
 }
@@ -351,7 +360,7 @@ int msan_posix_memalign(void **memptr, uptr alignment, uptr size,
   return 0;
 }
 
-} // namespace __msan
+}  // namespace __msan
 
 using namespace __msan;
 

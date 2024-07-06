@@ -582,6 +582,7 @@ private:
 
   /// The run-time callback to print a warning.
   FunctionCallee WarningFn;
+  FunctionCallee WarningOOBFn;
 
   // These arrays are indexed by log2(AccessSize).
   FunctionCallee MaybeWarningFn[kNumberOfAccessSizes];
@@ -765,6 +766,9 @@ void MemorySanitizer::createKernelApi(Module &M) {
 }
 
 static Constant *getOrInsertGlobal(Module &M, StringRef Name, Type *Ty) {
+  // [syx] llvm::Constant *Initializer is 0xfa
+  // llvm::Constant *Initializer =
+  //     llvm::ConstantInt::get(Type::getInt64Ty(M.getContext()), 0xfa);
   return M.getOrInsertGlobal(Name, Ty, [&] {
     return new GlobalVariable(M, Ty, false, GlobalVariable::ExternalLinkage,
                               nullptr, Name, nullptr,
@@ -783,6 +787,10 @@ void MemorySanitizer::createUserspaceApi(Module &M) {
                                     : "__msan_warning_with_origin_noreturn";
   WarningFn =
       M.getOrInsertFunction(WarningFnName, IRB.getVoidTy(), IRB.getInt32Ty());
+
+  StringRef WarningOOBFnName = "__msan_warning_oob_with_origin";
+  WarningOOBFn = M.getOrInsertFunction(WarningOOBFnName, IRB.getVoidTy(),
+                                       IRB.getInt32Ty());
 
   // Create the global TLS variables.
   RetvalTLS =
@@ -1191,13 +1199,24 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
                   OriginAlignment);
     }
   }
-
+  // [syx]
   void materializeStores(bool InstrumentWithCalls) {
     for (StoreInst *SI : StoreList) {
       IRBuilder<> IRB(SI);
       Value *Val = SI->getValueOperand();
       Value *Addr = SI->getPointerOperand();
       Value *Shadow = SI->isAtomic() ? getCleanShadow(Val) : getShadow(Val);
+      // if (ConstantInt *CI = dyn_cast_or_null<ConstantInt>(Shadow)) {
+      //   if (CI->isZero()) {
+      //     errs() << "[MemorySanitizer.cpp] materializeStores:
+      //     Shadow(unchange):"
+      //            << *Shadow << "\n";
+      //     Shadow = IRB.getInt64(0xfa);
+      //   }
+      // }
+      // Shadow = IRB.getInt64(0xfa);
+      // errs() << "[MemorySanitizer.cpp] materializeStores: Val: " << *Val
+      //        << " Addr: " << *Addr << " Shadow: " << *Shadow << "\n";
       Value *ShadowPtr, *OriginPtr;
       Type *ShadowTy = Shadow->getType();
       const Align Alignment = SI->getAlign();
@@ -1206,6 +1225,9 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
           getShadowOriginPtr(Addr, IRB, ShadowTy, Alignment, /*isStore*/ true);
 
       StoreInst *NewSI = IRB.CreateAlignedStore(Shadow, ShadowPtr, Alignment);
+      errs() << "[MemorySanitizer.cpp] materializeStores: NewSI: " << *NewSI
+             << " SI->isAtomic(): " << SI->isAtomic() << " Shadow: " << *Shadow
+             << "\n";
       LLVM_DEBUG(dbgs() << "  STORE: " << *NewSI << "\n");
       (void)NewSI;
 
@@ -1229,15 +1251,32 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     // at the very end.
   }
 
+  void insertWarningOOBFn(IRBuilder<> &IRB, Value *Origin) {
+    if (!Origin)
+      Origin = (Value *)IRB.getInt32(0);
+    assert(Origin->getType()->isIntegerTy());
+    IRB.CreateCall(MS.WarningOOBFn, Origin)->setCannotMerge();
+  }
+
   void materializeOneCheck(Instruction *OrigIns, Value *Shadow, Value *Origin,
                            bool AsCall) {
+
     IRBuilder<> IRB(OrigIns);
     LLVM_DEBUG(dbgs() << "  SHAD0 : " << *Shadow << "\n");
+    errs() << "[MemorySanitizer.cpp] materializeOneCheck: Shadow: " << *Shadow
+           << "\n";
     Value *ConvertedShadow = convertShadowToScalar(Shadow, IRB);
     LLVM_DEBUG(dbgs() << "  SHAD1 : " << *ConvertedShadow << "\n");
-
-    if (auto *ConstantShadow = dyn_cast<Constant>(ConvertedShadow)) {
+    errs() << "[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow: "
+           << *ConvertedShadow << "\n";
+    //[syx]
+    auto *ConstantShadow = dyn_cast<Constant>(ConvertedShadow);
+    if (ConstantShadow) {
+      errs() << "[MemorySanitizer.cpp] materializeOneCheck: ConstantShadow "
+             << *ConstantShadow << "\n";
       if (ClCheckConstantShadow && !ConstantShadow->isZeroValue()) {
+        errs()
+            << "[MemorySanitizer.cpp] materializeOneCheck: insertWarningFn 1\n";
         insertWarningFn(IRB, Origin);
       }
       return;
@@ -1258,21 +1297,37 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
       CB->addParamAttr(1, Attribute::ZExt);
     } else {
       Value *Cmp = convertToBool(ConvertedShadow, IRB, "_mscmp");
+      // Value *Cmp = cmpWithOneAndZero(ConvertedShadow, IRB, "_mscmp");
+
       Instruction *CheckTerm = SplitBlockAndInsertIfThen(
           Cmp, OrigIns,
           /* Unreachable */ !MS.Recover, MS.ColdCallWeights);
 
       IRB.SetInsertPoint(CheckTerm);
+      // errs() << "[MemorySanitizer.cpp] materializeOneCheck: CheckTerm "
+      //        << *CheckTerm << "\n";
+      // CheckTerm: "unreachable" in llir
+      errs() << "[MemorySanitizer.cpp] materializeOneCheck: Cmp: " << *Cmp
+             << "\n";
       insertWarningFn(IRB, Origin);
-      LLVM_DEBUG(dbgs() << "  CHECK: " << *Cmp << "\n");
+
+      // [syx] check oob
+      // Value *Cmp1 = convertToBool(ConvertedShadow, IRB, "_mscmp_oob");
+      // Instruction *CheckTerm1 = SplitBlockAndInsertIfThen(
+      //     Cmp1, OrigIns, !MS.Recover, MS.ColdCallWeights);
+      // IRB.SetInsertPoint(CheckTerm1);
+      // insertWarningOOBFn(IRB, Origin);
     }
   }
 
+  //[syx]
   void materializeChecks(bool InstrumentWithCalls) {
     for (const auto &ShadowData : InstrumentationList) {
       Instruction *OrigIns = ShadowData.OrigIns;
       Value *Shadow = ShadowData.Shadow;
       Value *Origin = ShadowData.Origin;
+      errs() << "[MemorySanitizer.cpp] materializeChecks: OrigIns: " << *OrigIns
+             << "\n";
       materializeOneCheck(OrigIns, Shadow, Origin, InstrumentWithCalls);
     }
     LLVM_DEBUG(dbgs() << "DONE:\n" << F);
@@ -1282,10 +1337,16 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
   void insertKmsanPrologue(IRBuilder<> &IRB) {
     Value *ContextState = IRB.CreateCall(MS.MsanGetContextStateFn, {});
     Constant *Zero = IRB.getInt32(0);
+    // Constant *Twelve = IRB.getInt32(12);
     MS.ParamTLS = IRB.CreateGEP(MS.MsanContextStateTy, ContextState,
                                 {Zero, IRB.getInt32(0)}, "param_shadow");
+    // [origin]
     MS.RetvalTLS = IRB.CreateGEP(MS.MsanContextStateTy, ContextState,
                                  {Zero, IRB.getInt32(1)}, "retval_shadow");
+    // [syx]
+    // MS.RetvalTLS = IRB.CreateGEP(MS.MsanContextStateTy, ContextState,
+    //  {Twelve, IRB.getInt32(1)}, "retval_shadow");
+
     MS.VAArgTLS = IRB.CreateGEP(MS.MsanContextStateTy, ContextState,
                                 {Zero, IRB.getInt32(2)}, "va_arg_shadow");
     MS.VAArgOriginTLS = IRB.CreateGEP(MS.MsanContextStateTy, ContextState,
@@ -1444,20 +1505,125 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     return IRB.CreateBitCast(V, NoVecTy);
   }
 
+  //[syx]
   // Convert a scalar value to an i1 by comparing with 0
   Value *convertToBool(Value *V, IRBuilder<> &IRB, const Twine &name = "") {
     Type *VTy = V->getType();
+    errs() << "[MemorySanitizer.cpp] convertToBool: VTy: " << *VTy << "\n";
     assert(VTy->isIntegerTy());
+    std::string vStr;
+    llvm::raw_string_ostream(vStr) << *V;
+    llvm::StringRef vStrRef(vStr);
+    std::string mutableString = vStrRef.str();
+    std::replace(mutableString.begin(), mutableString.end(), '%', '*');
+    mutableString.append(" : %x\n"); // output still 250
+    // mutableString.append(" : %hhx\n");
+    llvm::StringRef formatStrRef(mutableString);
+    printValue(V, IRB, formatStrRef);
+
+    //
+    // std::string addrStr = "Address of V: %p\n";
+    // llvm::StringRef addrFormatStrRef(addrStr);
+    // Value *VAddr = IRB.CreateIntToPtr(V,
+    // Type::getInt8PtrTy(IRB.getContext())); printValue(VAddr, IRB,
+    // addrFormatStrRef);
+
     if (VTy->getIntegerBitWidth() == 1)
       // Just converting a bool to a bool, so do nothing.
       return V;
-    return IRB.CreateICmpNE(V, ConstantInt::get(VTy, 0), name);
+    // return IRB.CreateICmpNE(V, ConstantInt::get(VTy, 0), name);
+    Value *ret = IRB.CreateICmpNE(V, ConstantInt::get(VTy, 0), name);
+
+    // Module *M = IRB.GetInsertBlock()->getModule();
+    // LLVMContext &Context = M->getContext();
+    // Value *ret = IRB.CreateCmp(
+    //     CmpInst::Predicate::ICMP_NE, V,
+    //     ConstantInt::get(IntegerType::getInt32Ty(Context), 250), name);
+    std::string vStr1;
+    llvm::raw_string_ostream(vStr1) << *ret;
+    llvm::StringRef vStrRef1(vStr1);
+    std::string mutableString1 = vStrRef1.str();
+    std::replace(mutableString1.begin(), mutableString1.end(), '%', '*');
+    mutableString1.append(" : %x\n");
+    llvm::StringRef formatStrRef1(mutableString1);
+    printValue(ret, IRB, formatStrRef1);
+    // compare name with "_mscmp_oob"
+    // if (name.str() == "_mscmp_oob") {
+    //   ret = IRB.CreateICmpEQ(V, ConstantInt::get(VTy, 0), name);
+    // }
+    return ret;
+    // return IRB.CreateICmpEQ(V, ConstantInt::get(VTy, 0), name);
+  }
+
+  void printValue(Value *V, IRBuilder<> &IRB,
+                  llvm::StringRef formatContent = "") {
+    Module *M = IRB.GetInsertBlock()->getModule();
+    LLVMContext &Context = M->getContext();
+
+    // Declare the printf function if it's not already declared
+    Function *PrintfFunc = M->getFunction("printf");
+    if (!PrintfFunc) {
+      // printf function signature: int printf(const char *, ...)
+      FunctionType *PrintfType = FunctionType::get(
+          IntegerType::getInt8Ty(Context),
+          // IntegerType::getInt32Ty(Context),
+          PointerType::get(Type::getInt8Ty(Context), 0), true);
+      PrintfFunc =
+          Function::Create(PrintfType, Function::ExternalLinkage, "printf", M);
+    }
+
+    // Create a format string
+    if (formatContent == "")
+      formatContent = "Result: %d\n";
+    Constant *FormatStr = ConstantDataArray::getString(Context, formatContent);
+    GlobalVariable *FormatStrVar =
+        new GlobalVariable(*M, FormatStr->getType(), true,
+                           GlobalValue::PrivateLinkage, FormatStr, ".str");
+
+    // Get a pointer to the format string
+    Constant *Zero = ConstantInt::get(Type::getInt8Ty(Context), 0);
+    // Constant *Zero = ConstantInt::get(Type::getInt32Ty(Context), 0);
+    std::vector<Constant *> Indices = {Zero, Zero};
+    Constant *FormatStrPtr = ConstantExpr::getGetElementPtr(
+        FormatStr->getType(), FormatStrVar, Indices);
+
+    // Call printf with the format string and the value
+    IRB.CreateCall(PrintfFunc, {FormatStrPtr, V});
+  }
+
+  //[syx]
+  Value *cmpWithOneAndZero(Value *V, IRBuilder<> &IRB, const Twine &name = "") {
+    Type *VTy = V->getType();
+    assert(VTy->isIntegerTy());
+
+    // if (VTy->getIntegerBitWidth() == 1) {
+    //   errs() << "[MemorySanitizer.cpp] cmpWithOneAndZero: "
+    //             "VTy->getIntegerBitWidth() == 1\n";
+    //   // Just converting a bool to a bool, so do nothing.
+    //   return V;
+    // }
+    Value *CmpWithZero =
+        IRB.CreateICmpNE(V, ConstantInt::get(VTy, 0), name + ".cmp_zero");
+    Value *CmpWithOne =
+        IRB.CreateICmpNE(V, ConstantInt::get(VTy, 1), name + ".cmp_one");
+    Value *Result =
+        IRB.CreateAnd(CmpWithZero, CmpWithOne, name + ".cmp_zero_and_one");
+
+    llvm::StringRef formatContent0 = "V: %d\n";
+    llvm::StringRef formatContent1 = "CmpWithZero: %d\n";
+    llvm::StringRef formatContent2 = "CmpWithOne: %d\n";
+    printValue(V, IRB, formatContent0);
+    printValue(CmpWithZero, IRB, formatContent1);
+    printValue(CmpWithOne, IRB, formatContent2);
+    printValue(Result, IRB);
+    return Result;
   }
 
   /// Compute the integer shadow offset that corresponds to a given
   /// application address.
   ///
   /// Offset = (Addr & ~AndMask) ^ XorMask
+  // [syx]
   Value *getShadowPtrOffset(Value *Addr, IRBuilder<> &IRB) {
     Value *OffsetLong = IRB.CreatePointerCast(Addr, MS.IntptrTy);
 
@@ -1580,7 +1746,17 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
   /// Set SV to be the shadow value for V.
   void setShadow(Value *V, Value *SV) {
     assert(!ShadowMap.count(V) && "Values may only have one shadow");
+
     ShadowMap[V] = PropagateShadow ? SV : getCleanShadow(V);
+    // if (ConstantInt *CI = dyn_cast_or_null<ConstantInt>(ShadowMap[V])) {
+    //   if (CI->isZero()) {
+    //     ShadowMap[V] = ConstantInt::get(CI->getType(), 0xfa);
+    //   }
+    // }
+    if (!isa<Instruction>(V) && !isa<Argument>(V) && !isa<Constant>(V)) {
+    } else {
+      errs() << "[MemorySanitizer.cpp] setShadow() V: " << *V << " \n";
+    }
   }
 
   /// Set Origin to be the origin value for V.
@@ -1645,6 +1821,9 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
         return getCleanShadow(V);
       // For instructions the shadow is already stored in the map.
       Value *Shadow = ShadowMap[V];
+      // [syx]
+      // errs() << "[MemorySanitizer.cpp] getShadow() V: " << *V
+      //        << " Shadow: " << *Shadow << "\n";
       if (!Shadow) {
         LLVM_DEBUG(dbgs() << "No shadow: " << *V << "\n" << *(I->getParent()));
         (void)I;
@@ -3882,17 +4061,29 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     return createPrivateNonConstGlobalForString(*F.getParent(),
                                                 StackDescription.str());
   }
-
+  //[syx]
   void poisonAllocaUserspace(AllocaInst &I, IRBuilder<> &IRB, Value *Len) {
+    //[syx]
+    // errs() << "[MemorySanitizer.cpp] poisonAllocaUserspace: PoisonStack "
+    //        << PoisonStack << " ClPoisonStackWithCall " <<
+    //        ClPoisonStackWithCall
+    //        << "\n";
     if (PoisonStack && ClPoisonStackWithCall) {
+      // create call: __msan_poison_stack(&I, Len)
       IRB.CreateCall(MS.MsanPoisonStackFn,
                      {IRB.CreatePointerCast(&I, IRB.getInt8PtrTy()), Len});
     } else {
+      // [syx] after testing, seem this branch is always executed
       Value *ShadowBase, *OriginBase;
       std::tie(ShadowBase, OriginBase) = getShadowOriginPtr(
           &I, IRB, IRB.getInt8Ty(), Align(1), /*isStore*/ true);
 
       Value *PoisonValue = IRB.getInt8(PoisonStack ? ClPoisonStackPattern : 0);
+      // ShadowBase: &I
+      errs() << "[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: "
+             << ShadowBase << " PoisonValue: " << *PoisonValue
+             << " Len: " << *Len << " \n";
+
       IRB.CreateMemSet(ShadowBase, PoisonValue, Len, I.getAlign());
     }
 
@@ -3912,6 +4103,8 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
                      {IRB.CreatePointerCast(&I, IRB.getInt8PtrTy()), Len,
                       IRB.CreatePointerCast(Descr, IRB.getInt8PtrTy())});
     } else {
+      errs() << "[MemorySanitizer.cpp] poisonAllocaKmsan: create "
+                "MsanUnpoisonAllocaFn\n";
       IRB.CreateCall(MS.MsanUnpoisonAllocaFn,
                      {IRB.CreatePointerCast(&I, IRB.getInt8PtrTy()), Len});
     }
@@ -3926,11 +4119,16 @@ struct MemorySanitizerVisitor : public InstVisitor<MemorySanitizerVisitor> {
     Value *Len = ConstantInt::get(MS.IntptrTy, TypeSize);
     if (I.isArrayAllocation())
       Len = IRB.CreateMul(Len, I.getArraySize());
-
-    if (MS.CompileKernel)
+    // [syx] print I
+    if (MS.CompileKernel) {
       poisonAllocaKmsan(I, IRB, Len);
-    else
+      errs() << "[MemorySanitizer.cpp] instrumentAlloca: I<AllocaKmsan>: " << I
+             << " Len: " << *Len << "\n";
+    } else {
       poisonAllocaUserspace(I, IRB, Len);
+      errs() << "[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>: "
+             << I << " Len: " << *Len << "\n";
+    }
   }
 
   void visitAllocaInst(AllocaInst &I) {

@@ -14,23 +14,23 @@
 #include "sanitizer_common/sanitizer_platform.h"
 #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD
 
-#include "msan.h"
-#include "msan_report.h"
-#include "msan_thread.h"
+#  include <elf.h>
+#  include <link.h>
+#  include <pthread.h>
+#  include <signal.h>
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include <string.h>
+#  include <sys/resource.h>
+#  include <sys/time.h>
+#  include <unistd.h>
+#  include <unwind.h>
 
-#include <elf.h>
-#include <link.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <unwind.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-
-#include "sanitizer_common/sanitizer_common.h"
-#include "sanitizer_common/sanitizer_procmaps.h"
+#  include "msan.h"
+#  include "msan_report.h"
+#  include "msan_thread.h"
+#  include "sanitizer_common/sanitizer_common.h"
+#  include "sanitizer_common/sanitizer_procmaps.h"
 
 namespace __msan {
 
@@ -104,6 +104,26 @@ static void CheckMemoryLayoutSanity() {
   }
 }
 
+// [syx] set shadow value to default 0xfa
+// problem: too slow
+void SetShadowToDefalut() {
+  // return;
+  printf("[msan_linux.cpp] SetShadowToDefalut: kMemoryLayoutSize=%d\n",
+         kMemoryLayoutSize);
+  for (unsigned i = 0; i < kMemoryLayoutSize; ++i) {
+    uptr start = kMemoryLayout[i].start;
+    uptr end = kMemoryLayout[i].end;
+    MappingDesc::Type type = kMemoryLayout[i].type;
+
+    printf("[msan_linux.cpp] SetShadowToDefalut: i=%d\n", i);
+    if (type == MappingDesc::SHADOW) {
+      printf("[msan_linux.cpp] SetShadowToDefalut: start memset\n");
+      // memset_quick((void *)start, 0xff, end - start);
+      printf("[msan_linux.cpp] SetShadowToDefalut: end memset\n");
+    }
+  }
+}
+
 bool InitShadow(bool init_origins) {
   // Let user know mapping parameters first.
   VPrintf(1, "__msan_init %p\n", reinterpret_cast<void *>(&__msan_init));
@@ -167,13 +187,11 @@ static void MsanAtExit(void) {
   }
 }
 
-void InstallAtExitHandler() {
-  atexit(MsanAtExit);
-}
+void InstallAtExitHandler() { atexit(MsanAtExit); }
 
 // ---------------------- TSD ---------------- {{{1
 
-#if SANITIZER_NETBSD
+#  if SANITIZER_NETBSD
 // Thread Static Data cannot be used in early init on NetBSD.
 // Reuse the MSan TSD API for compatibility with existing code
 // with an alternative implementation.
@@ -217,7 +235,7 @@ void MsanTSDDtor(void *tsd) {
   atomic_signal_fence(memory_order_seq_cst);
   MsanThread::TSDDtor(tsd);
 }
-#else
+#  else
 static pthread_key_t tsd_key;
 static bool tsd_key_inited = false;
 
@@ -227,11 +245,9 @@ void MsanTSDInit(void (*destructor)(void *tsd)) {
   CHECK_EQ(0, pthread_key_create(&tsd_key, destructor));
 }
 
-static THREADLOCAL MsanThread* msan_current_thread;
+static THREADLOCAL MsanThread *msan_current_thread;
 
-MsanThread *GetCurrentThread() {
-  return msan_current_thread;
-}
+MsanThread *GetCurrentThread() { return msan_current_thread; }
 
 void SetCurrentThread(MsanThread *t) {
   // Make sure we do not reset the current MsanThread.
@@ -243,7 +259,7 @@ void SetCurrentThread(MsanThread *t) {
 }
 
 void MsanTSDDtor(void *tsd) {
-  MsanThread *t = (MsanThread*)tsd;
+  MsanThread *t = (MsanThread *)tsd;
   if (t->destructor_iterations_ > 1) {
     t->destructor_iterations_--;
     CHECK_EQ(0, pthread_setspecific(tsd_key, tsd));
@@ -254,8 +270,8 @@ void MsanTSDDtor(void *tsd) {
   atomic_signal_fence(memory_order_seq_cst);
   MsanThread::TSDDtor(tsd);
 }
-#endif
+#  endif
 
-} // namespace __msan
+}  // namespace __msan
 
-#endif // SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD
+#endif  // SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD

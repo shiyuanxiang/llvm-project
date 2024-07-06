@@ -28,9 +28,7 @@ void PoisonShadow(uptr addr, uptr size, u8 value);
 
 // Poisons the shadow memory for "redzone_size" bytes starting from
 // "addr + size".
-void PoisonShadowPartialRightRedzone(uptr addr,
-                                     uptr size,
-                                     uptr redzone_size,
+void PoisonShadowPartialRightRedzone(uptr addr, uptr size, uptr redzone_size,
                                      u8 value);
 
 // Fast versions of PoisonShadow and PoisonShadowPartialRightRedzone that
@@ -52,7 +50,7 @@ ALWAYS_INLINE void FastPoisonShadow(uptr aligned_beg, uptr aligned_size,
   // For now, just memset on Windows.
   if (value || SANITIZER_WINDOWS == 1 ||
       shadow_end - shadow_beg < common_flags()->clear_shadow_mmap_threshold) {
-    REAL(memset)((void*)shadow_beg, value, shadow_end - shadow_beg);
+    REAL(memset)((void *)shadow_beg, value, shadow_end - shadow_beg);
   } else {
     uptr page_size = GetPageSizeCached();
     uptr page_beg = RoundUpTo(shadow_beg, page_size);
@@ -70,14 +68,20 @@ ALWAYS_INLINE void FastPoisonShadow(uptr aligned_beg, uptr aligned_size,
       ReserveShadowMemoryRange(page_beg, page_end - 1, nullptr);
     }
   }
-#endif // SANITIZER_FUCHSIA
+#endif  // SANITIZER_FUCHSIA
 }
 
-ALWAYS_INLINE void FastPoisonShadowPartialRightRedzone(
-    uptr aligned_addr, uptr size, uptr redzone_size, u8 value) {
+ALWAYS_INLINE void FastPoisonShadowPartialRightRedzone(uptr aligned_addr,
+                                                       uptr size,
+                                                       uptr redzone_size,
+                                                       u8 value) {
+  Report(
+      "[asan_poisoning.h] FastPoisonShadowPartialRightRedzone: "
+      "aligned_addr=%p, size=%lu, redzone_size=%lu, value=%d\n",
+      aligned_addr, size, redzone_size, value);
   DCHECK(CanPoisonMemory());
   bool poison_partial = flags()->poison_partial;
-  u8 *shadow = (u8*)MEM_TO_SHADOW(aligned_addr);
+  u8 *shadow = (u8 *)MEM_TO_SHADOW(aligned_addr);
   for (uptr i = 0; i < redzone_size; i += ASAN_SHADOW_GRANULARITY, shadow++) {
     if (i + ASAN_SHADOW_GRANULARITY <= size) {
       *shadow = 0;  // fully addressable

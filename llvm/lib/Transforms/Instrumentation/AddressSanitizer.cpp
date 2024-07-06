@@ -1447,6 +1447,7 @@ static void instrumentMaskedLoadOrStore(AddressSanitizer *Pass,
   }
 }
 
+//[syx]
 void AddressSanitizer::instrumentMop(ObjectSizeOffsetVisitor &ObjSizeVis,
                                      InterestingMemoryOperand &O, bool UseCalls,
                                      const DataLayout &DL) {
@@ -1501,7 +1502,7 @@ void AddressSanitizer::instrumentMop(ObjectSizeOffsetVisitor &ObjSizeVis,
                         Exp);
   }
 }
-
+// [syx]
 Instruction *AddressSanitizer::generateCrashCode(Instruction *InsertBefore,
                                                  Value *Addr, bool IsWrite,
                                                  size_t AccessSizeIndex,
@@ -1571,6 +1572,7 @@ Instruction *AddressSanitizer::instrumentAMDGPUAddress(
   return InsertBefore;
 }
 
+// [syx]
 void AddressSanitizer::instrumentAddress(Instruction *OrigIns,
                                          Instruction *InsertBefore, Value *Addr,
                                          uint32_t TypeSize, bool IsWrite,
@@ -1639,6 +1641,10 @@ void AddressSanitizer::instrumentAddress(Instruction *OrigIns,
       ReplaceInstWithInst(CheckTerm, NewTerm);
     }
   } else {
+    //[syx] explain: if the shadow value is not zero, then we should crash
+    // the program. InsertBefore is the instruction that we should insert the
+    // crash code before.
+
     CrashTerm = SplitBlockAndInsertIfThen(Cmp, InsertBefore, !Recover);
   }
 
@@ -2428,7 +2434,8 @@ ModuleAddressSanitizer::getRedzoneSizeForGlobal(uint64_t SizeInBytes) const {
   }
 
   assert((RZ + SizeInBytes) % MinRZ == 0);
-
+  errs() << "[AddressSanitizer.cpp] getRedzoneSizeForGlobal: RZ: " << RZ
+         << "\n";
   return RZ;
 }
 
@@ -3383,6 +3390,8 @@ void FunctionStackPoisoner::processStaticAllocas() {
 void FunctionStackPoisoner::poisonAlloca(Value *V, uint64_t Size,
                                          IRBuilder<> &IRB, bool DoPoison) {
   // For now just insert the call to ASan runtime.
+  errs() << "[AddressSanitizer.cpp] poisonAlloc: V=" << *V << " size=" << Size
+         << " do_poison=" << DoPoison << "\n";
   Value *AddrArg = IRB.CreatePointerCast(V, IntptrTy);
   Value *SizeArg = ConstantInt::get(IntptrTy, Size);
   IRB.CreateCall(DoPoison ? AsanPoisonStackMemoryFunc

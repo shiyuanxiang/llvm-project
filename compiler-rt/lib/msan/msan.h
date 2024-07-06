@@ -14,30 +14,27 @@
 #ifndef MSAN_H
 #define MSAN_H
 
+#include "msan_flags.h"
+#include "msan_interface_internal.h"
 #include "sanitizer_common/sanitizer_flags.h"
 #include "sanitizer_common/sanitizer_internal_defs.h"
 #include "sanitizer_common/sanitizer_stacktrace.h"
-#include "msan_interface_internal.h"
-#include "msan_flags.h"
 #include "ubsan/ubsan_platform.h"
 
 #ifndef MSAN_REPLACE_OPERATORS_NEW_AND_DELETE
-# define MSAN_REPLACE_OPERATORS_NEW_AND_DELETE 1
+#  define MSAN_REPLACE_OPERATORS_NEW_AND_DELETE 1
 #endif
 
 #ifndef MSAN_CONTAINS_UBSAN
-# define MSAN_CONTAINS_UBSAN CAN_SANITIZE_UB
+#  define MSAN_CONTAINS_UBSAN CAN_SANITIZE_UB
 #endif
 
 struct MappingDesc {
   uptr start;
   uptr end;
-  enum Type {
-    INVALID, APP, SHADOW, ORIGIN
-  } type;
+  enum Type { INVALID, APP, SHADOW, ORIGIN } type;
   const char *name;
 };
-
 
 #if SANITIZER_LINUX && defined(__mips64)
 
@@ -60,8 +57,8 @@ const MappingDesc kMemoryLayout[] = {
     {0x00c000000000ULL, 0x00e200000000ULL, MappingDesc::INVALID, "invalid"},
     {0x00e200000000ULL, 0x00ffffffffffULL, MappingDesc::APP, "app-3"}};
 
-#define MEM_TO_SHADOW(mem) (((uptr)(mem)) ^ 0x8000000000ULL)
-#define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x2000000000ULL)
+#  define MEM_TO_SHADOW(mem) (((uptr)(mem)) ^ 0x8000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x2000000000ULL)
 
 #elif SANITIZER_LINUX && defined(__aarch64__)
 
@@ -155,8 +152,8 @@ const MappingDesc kMemoryLayout[] = {
     {0x0FFB000000000ULL, 0x0FFFF00000000ULL, MappingDesc::INVALID, "invalid"},
     {0x0FFFF00000000ULL, 0x1000000000000ULL, MappingDesc::APP, "app-15"},
 };
-# define MEM_TO_SHADOW(mem) ((uptr)mem ^ 0x6000000000ULL)
-# define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x1000000000ULL)
+#  define MEM_TO_SHADOW(mem) ((uptr)mem ^ 0x6000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x1000000000ULL)
 
 #elif SANITIZER_LINUX && SANITIZER_PPC64
 const MappingDesc kMemoryLayout[] = {
@@ -176,10 +173,10 @@ const MappingDesc kMemoryLayout[] = {
 //   High: 3000 0000 0000 - 3fff ffff ffff  ->  0000 0000 0000 - 0fff ffff ffff
 //   High: 4000 0000 0000 - 4fff ffff ffff  ->  0000 0000 0000 - 0fff ffff ffff
 //   High: 7000 0000 0000 - 7fff ffff ffff  ->  0000 0000 0000 - 0fff ffff ffff
-#define LINEARIZE_MEM(mem) \
-  (((uptr)(mem) & ~0xE00000000000ULL) ^ 0x100000000000ULL)
-#define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x080000000000ULL)
-#define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x140000000000ULL)
+#  define LINEARIZE_MEM(mem) \
+    (((uptr)(mem) & ~0xE00000000000ULL) ^ 0x100000000000ULL)
+#  define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x080000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x140000000000ULL)
 
 #elif SANITIZER_LINUX && SANITIZER_S390_64
 const MappingDesc kMemoryLayout[] = {
@@ -187,13 +184,13 @@ const MappingDesc kMemoryLayout[] = {
     {0x040000000000ULL, 0x080000000000ULL, MappingDesc::INVALID, "invalid"},
     {0x080000000000ULL, 0x180000000000ULL, MappingDesc::SHADOW, "shadow"},
     {0x180000000000ULL, 0x1C0000000000ULL, MappingDesc::INVALID, "invalid"},
-    {0x1C0000000000ULL, 0x2C0000000000ULL, MappingDesc::ORIGIN, "origin"},
+    {0x1C0000000000ULLd, 0x2C0000000000ULL, MappingDesc::ORIGIN, "origin"},
     {0x2C0000000000ULL, 0x440000000000ULL, MappingDesc::INVALID, "invalid"},
     {0x440000000000ULL, 0x500000000000ULL, MappingDesc::APP, "high memory"}};
 
-#define MEM_TO_SHADOW(mem) \
-  ((((uptr)(mem)) & ~0xC00000000000ULL) + 0x080000000000ULL)
-#define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x140000000000ULL)
+#  define MEM_TO_SHADOW(mem) \
+    ((((uptr)(mem)) & ~0xC00000000000ULL) + 0x080000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x140000000000ULL)
 
 #elif SANITIZER_FREEBSD && defined(__aarch64__)
 
@@ -211,10 +208,10 @@ const MappingDesc kMemoryLayout[] = {
 // Maps low and high app ranges to contiguous space with zero base:
 //   Low:  0000 0000 0000 - 01ff ffff ffff -> 4000 0000 0000 - 41ff ffff ffff
 //   High: c000 0000 0000 - ffff ffff ffff -> 0000 0000 0000 - 3fff ffff ffff
-#define LINEARIZE_MEM(mem) \
-  (((uptr)(mem) & ~0x1800000000000ULL) ^ 0x400000000000ULL)
-#define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x200000000000ULL)
-#define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x500000000000)
+#  define LINEARIZE_MEM(mem) \
+    (((uptr)(mem) & ~0x1800000000000ULL) ^ 0x400000000000ULL)
+#  define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x200000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x500000000000)
 
 #elif SANITIZER_FREEBSD && SANITIZER_WORDSIZE == 64
 
@@ -232,14 +229,14 @@ const MappingDesc kMemoryLayout[] = {
 // Maps low and high app ranges to contiguous space with zero base:
 //   Low:  0000 0000 0000 - 00ff ffff ffff  ->  2000 0000 0000 - 20ff ffff ffff
 //   High: 6000 0000 0000 - 7fff ffff ffff  ->  0000 0000 0000 - 1fff ffff ffff
-#define LINEARIZE_MEM(mem) \
-  (((uptr)(mem) & ~0xc00000000000ULL) ^ 0x200000000000ULL)
-#define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x100000000000ULL)
-#define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x280000000000)
+#  define LINEARIZE_MEM(mem) \
+    (((uptr)(mem) & ~0xc00000000000ULL) ^ 0x200000000000ULL)
+#  define MEM_TO_SHADOW(mem) (LINEARIZE_MEM((mem)) + 0x100000000000ULL)
+#  define SHADOW_TO_ORIGIN(shadow) (((uptr)(shadow)) + 0x280000000000)
 
 #elif SANITIZER_NETBSD || (SANITIZER_LINUX && SANITIZER_WORDSIZE == 64)
 
-#ifdef MSAN_LINUX_X86_64_OLD_MAPPING
+#  ifdef MSAN_LINUX_X86_64_OLD_MAPPING
 // Requires PIE binary and ASLR enabled.
 // Main thread stack and DSOs at 0x7f0000000000 (sometimes 0x7e0000000000).
 // Heap at 0x600000000000.
@@ -249,14 +246,20 @@ const MappingDesc kMemoryLayout[] = {
     {0x400000000000ULL, 0x600000000000ULL, MappingDesc::ORIGIN, "origin"},
     {0x600000000000ULL, 0x800000000000ULL, MappingDesc::APP, "app"}};
 
-#define MEM_TO_SHADOW(mem) (((uptr)(mem)) & ~0x400000000000ULL)
-#define SHADOW_TO_ORIGIN(mem) (((uptr)(mem)) + 0x200000000000ULL)
-#else  // MSAN_LINUX_X86_64_OLD_MAPPING
+#    define MEM_TO_SHADOW(mem) (((uptr)(mem)) & ~0x400000000000ULL)
+#    define SHADOW_TO_ORIGIN(mem) (((uptr)(mem)) + 0x200000000000ULL)
+#  else  // MSAN_LINUX_X86_64_OLD_MAPPING
 // All of the following configurations are supported.
 // ASLR disabled: main executable and DSOs at 0x555550000000
 // PIE and ASLR: main executable and DSOs at 0x7f0000000000
 // non-PIE: main executable below 0x100000000, DSOs at 0x7f0000000000
 // Heap at 0x700000000000.
+
+// [syx]
+// shadow-1 sieze = 0x010000000000 = 1,099,511,627,776 bytes = 1 TB
+// shadow-2 sieze = 0x0F0000000000 = 1,073,741,824,000 bytes ≈ 1 TB
+// shadow-3 sieze = 0x100000000000 = 1,099,511,627,776 bytes = 1 TB
+
 const MappingDesc kMemoryLayout[] = {
     {0x000000000000ULL, 0x010000000000ULL, MappingDesc::APP, "app-1"},
     {0x010000000000ULL, 0x100000000000ULL, MappingDesc::SHADOW, "shadow-2"},
@@ -270,12 +273,14 @@ const MappingDesc kMemoryLayout[] = {
     {0x600000000000ULL, 0x610000000000ULL, MappingDesc::ORIGIN, "origin-1"},
     {0x610000000000ULL, 0x700000000000ULL, MappingDesc::INVALID, "invalid"},
     {0x700000000000ULL, 0x800000000000ULL, MappingDesc::APP, "app-3"}};
-#define MEM_TO_SHADOW(mem) (((uptr)(mem)) ^ 0x500000000000ULL)
-#define SHADOW_TO_ORIGIN(mem) (((uptr)(mem)) + 0x100000000000ULL)
-#endif  // MSAN_LINUX_X86_64_OLD_MAPPING
+
+//[syx]
+#    define MEM_TO_SHADOW(mem) (((uptr)(mem)) ^ 0x500000000000ULL)
+#    define SHADOW_TO_ORIGIN(mem) (((uptr)(mem)) + 0x100000000000ULL)
+#  endif  // MSAN_LINUX_X86_64_OLD_MAPPING
 
 #else
-#error "Unsupported platform"
+#  error "Unsupported platform"
 #endif
 
 const uptr kMemoryLayoutSize = sizeof(kMemoryLayout) / sizeof(kMemoryLayout[0]);
@@ -285,11 +290,12 @@ const uptr kMemoryLayoutSize = sizeof(kMemoryLayout) / sizeof(kMemoryLayout[0]);
 #ifndef __clang__
 __attribute__((optimize("unroll-loops")))
 #endif
-inline bool addr_is_type(uptr addr, MappingDesc::Type mapping_type) {
+inline bool
+addr_is_type(uptr addr, MappingDesc::Type mapping_type) {
 // It is critical for performance that this loop is unrolled (because then it is
 // simplified into just a few constant comparisons).
 #ifdef __clang__
-#pragma unroll
+#  pragma unroll
 #endif
   for (unsigned i = 0; i < kMemoryLayoutSize; ++i)
     if (kMemoryLayout[i].type == mapping_type &&
@@ -313,6 +319,7 @@ extern int msan_report_count;
 
 bool ProtectRange(uptr beg, uptr end);
 bool InitShadow(bool init_origins);
+void SetShadowToDefalut();
 char *GetProcSelfMaps();
 void InitializeInterceptors();
 
@@ -350,24 +357,25 @@ u32 ChainOrigin(u32 id, StackTrace *stack);
 
 const int STACK_TRACE_TAG_POISON = StackTrace::TAG_CUSTOM + 1;
 
-#define GET_MALLOC_STACK_TRACE                                            \
-  BufferedStackTrace stack;                                               \
-  if (__msan_get_track_origins() && msan_inited)                          \
-    stack.Unwind(StackTrace::GetCurrentPc(), GET_CURRENT_FRAME(),         \
-                 nullptr, common_flags()->fast_unwind_on_malloc,          \
-                 common_flags()->malloc_context_size)
+#define GET_MALLOC_STACK_TRACE                                           \
+  BufferedStackTrace stack;                                              \
+  if (__msan_get_track_origins() && msan_inited)                         \
+  stack.Unwind(StackTrace::GetCurrentPc(), GET_CURRENT_FRAME(), nullptr, \
+               common_flags()->fast_unwind_on_malloc,                    \
+               common_flags()->malloc_context_size)
 
 // For platforms which support slow unwinder only, we restrict the store context
 // size to 1, basically only storing the current pc. We do this because the slow
 // unwinder which is based on libunwind is not async signal safe and causes
 // random freezes in forking applications as well as in signal handlers.
-#define GET_STORE_STACK_TRACE_PC_BP(pc, bp)                                    \
-  BufferedStackTrace stack;                                                    \
-  if (__msan_get_track_origins() > 1 && msan_inited) {                         \
-    int size = flags()->store_context_size;                                    \
-    if (!SANITIZER_CAN_FAST_UNWIND)                                            \
-      size = Min(size, 1);                                                     \
-    stack.Unwind(pc, bp, nullptr, common_flags()->fast_unwind_on_malloc, size);\
+#define GET_STORE_STACK_TRACE_PC_BP(pc, bp)                              \
+  BufferedStackTrace stack;                                              \
+  if (__msan_get_track_origins() > 1 && msan_inited) {                   \
+    int size = flags()->store_context_size;                              \
+    if (!SANITIZER_CAN_FAST_UNWIND)                                      \
+      size = Min(size, 1);                                               \
+    stack.Unwind(pc, bp, nullptr, common_flags()->fast_unwind_on_malloc, \
+                 size);                                                  \
   }
 
 #define GET_STORE_STACK_TRACE \
@@ -385,6 +393,7 @@ class ScopedThreadLocalStateBackup {
   ~ScopedThreadLocalStateBackup() { Restore(); }
   void Backup();
   void Restore();
+
  private:
   u64 va_arg_overflow_size_tls;
 };

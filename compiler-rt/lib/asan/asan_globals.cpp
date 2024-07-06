@@ -62,6 +62,12 @@ ALWAYS_INLINE void PoisonShadowForGlobal(const Global *g, u8 value) {
 
 ALWAYS_INLINE void PoisonRedZones(const Global &g) {
   uptr aligned_size = RoundUpTo(g.size, ASAN_SHADOW_GRANULARITY);
+  Report(
+      "[asan_globals.cpp] PoisonRedZones: aligned_beg=%p, aligned_size=%zu, "
+      "value=%zu\n",
+      g.beg + aligned_size, g.size_with_redzone - aligned_size,
+      kAsanGlobalRedzoneMagic);
+
   FastPoisonShadow(g.beg + aligned_size, g.size_with_redzone - aligned_size,
                    kAsanGlobalRedzoneMagic);
   if (g.size != aligned_size) {
@@ -75,8 +81,10 @@ ALWAYS_INLINE void PoisonRedZones(const Global &g) {
 const uptr kMinimalDistanceFromAnotherGlobal = 64;
 
 static bool IsAddressNearGlobal(uptr addr, const __asan_global &g) {
-  if (addr <= g.beg - kMinimalDistanceFromAnotherGlobal) return false;
-  if (addr >= g.beg + g.size_with_redzone) return false;
+  if (addr <= g.beg - kMinimalDistanceFromAnotherGlobal)
+    return false;
+  if (addr >= g.beg + g.size_with_redzone)
+    return false;
   return true;
 }
 
@@ -107,7 +115,8 @@ static u32 FindRegistrationSite(const Global *g) {
 
 int GetGlobalsForAddress(uptr addr, Global *globals, u32 *reg_sites,
                          int max_globals) {
-  if (!flags()->report_globals) return 0;
+  if (!flags()->report_globals)
+    return 0;
   Lock lock(&mu_for_globals);
   int res = 0;
   for (ListOfGlobals *l = list_of_all_globals; l; l = l->next) {
@@ -126,10 +135,7 @@ int GetGlobalsForAddress(uptr addr, Global *globals, u32 *reg_sites,
   return res;
 }
 
-enum GlobalSymbolState {
-  UNREGISTERED = 0,
-  REGISTERED = 1
-};
+enum GlobalSymbolState { UNREGISTERED = 0, REGISTERED = 1 };
 
 // Check ODR violation for given global G via special ODR indicator. We use
 // this method in case compiler instruments global variables through their
@@ -149,8 +155,8 @@ static void CheckODRViolationViaIndicator(const Global *g) {
     if (g->odr_indicator == l->g->odr_indicator &&
         (flags()->detect_odr_violation >= 2 || g->size != l->g->size) &&
         !IsODRViolationSuppressed(g->name))
-      ReportODRViolation(g, FindRegistrationSite(g),
-                         l->g, FindRegistrationSite(l->g));
+      ReportODRViolation(g, FindRegistrationSite(g), l->g,
+                         FindRegistrationSite(l->g));
   }
 }
 
@@ -165,8 +171,8 @@ static void CheckODRViolationViaPoisoning(const Global *g) {
       if (g->beg == l->g->beg &&
           (flags()->detect_odr_violation >= 2 || g->size != l->g->size) &&
           !IsODRViolationSuppressed(g->name))
-        ReportODRViolation(g, FindRegistrationSite(g),
-                           l->g, FindRegistrationSite(l->g));
+        ReportODRViolation(g, FindRegistrationSite(g), l->g,
+                           FindRegistrationSite(l->g));
     }
   }
 }
@@ -221,7 +227,7 @@ static void RegisterGlobal(const Global *g) {
   }
   if (CanPoisonMemory())
     PoisonRedZones(*g);
-  ListOfGlobals *l = new(allocator_for_globals) ListOfGlobals;
+  ListOfGlobals *l = new (allocator_for_globals) ListOfGlobals;
   l->g = g;
   l->next = list_of_all_globals;
   list_of_all_globals = l;
@@ -230,7 +236,7 @@ static void RegisterGlobal(const Global *g) {
       dynamic_init_globals = new (allocator_for_globals) VectorOfGlobals;
       dynamic_init_globals->reserve(kDynamicInitGlobalsInitialCapacity);
     }
-    DynInitGlobal dyn_global = { *g, false };
+    DynInitGlobal dyn_global = {*g, false};
     dynamic_init_globals->push_back(dyn_global);
   }
 }
@@ -289,9 +295,11 @@ const char *MaybeDemangleGlobalName(const char *name) {
 void PrintGlobalNameIfASCII(InternalScopedString *str, const __asan_global &g) {
   for (uptr p = g.beg; p < g.beg + g.size - 1; p++) {
     unsigned char c = *(unsigned char *)p;
-    if (c == '\0' || !IsASCII(c)) return;
+    if (c == '\0' || !IsASCII(c))
+      return;
   }
-  if (*(char *)(g.beg + g.size - 1) != '\0') return;
+  if (*(char *)(g.beg + g.size - 1) != '\0')
+    return;
   str->append("  '%s' is ascii string '%s'\n", MaybeDemangleGlobalName(g.name),
               (char *)g.beg);
 }
@@ -307,7 +315,7 @@ void PrintGlobalLocation(InternalScopedString *str, const __asan_global &g) {
   }
 }
 
-} // namespace __asan
+}  // namespace __asan
 
 // ---------------------- Interface ---------------- {{{1
 using namespace __asan;
@@ -331,28 +339,33 @@ void __asan_unregister_image_globals(uptr *flag) {
 }
 
 void __asan_register_elf_globals(uptr *flag, void *start, void *stop) {
-  if (*flag) return;
-  if (!start) return;
+  if (*flag)
+    return;
+  if (!start)
+    return;
   CHECK_EQ(0, ((uptr)stop - (uptr)start) % sizeof(__asan_global));
-  __asan_global *globals_start = (__asan_global*)start;
-  __asan_global *globals_stop = (__asan_global*)stop;
+  __asan_global *globals_start = (__asan_global *)start;
+  __asan_global *globals_stop = (__asan_global *)stop;
   __asan_register_globals(globals_start, globals_stop - globals_start);
   *flag = 1;
 }
 
 void __asan_unregister_elf_globals(uptr *flag, void *start, void *stop) {
-  if (!*flag) return;
-  if (!start) return;
+  if (!*flag)
+    return;
+  if (!start)
+    return;
   CHECK_EQ(0, ((uptr)stop - (uptr)start) % sizeof(__asan_global));
-  __asan_global *globals_start = (__asan_global*)start;
-  __asan_global *globals_stop = (__asan_global*)stop;
+  __asan_global *globals_start = (__asan_global *)start;
+  __asan_global *globals_stop = (__asan_global *)stop;
   __asan_unregister_globals(globals_start, globals_stop - globals_start);
   *flag = 0;
 }
 
 // Register an array of globals.
 void __asan_register_globals(__asan_global *globals, uptr n) {
-  if (!flags()->report_globals) return;
+  if (!flags()->report_globals)
+    return;
   GET_STACK_TRACE_MALLOC;
   u32 stack_id = StackDepotPut(stack);
   Lock lock(&mu_for_globals);
@@ -394,7 +407,8 @@ void __asan_register_globals(__asan_global *globals, uptr n) {
 // Unregister an array of globals.
 // We must do this when a shared objects gets dlclosed.
 void __asan_unregister_globals(__asan_global *globals, uptr n) {
-  if (!flags()->report_globals) return;
+  if (!flags()->report_globals)
+    return;
   Lock lock(&mu_for_globals);
   for (uptr i = 0; i < n; i++) {
     if (SANITIZER_WINDOWS && globals[i].beg == 0) {
@@ -414,8 +428,7 @@ void __asan_unregister_globals(__asan_global *globals, uptr n) {
 // poisons all global variables not defined in this TU, so that a dynamic
 // initializer can only touch global variables in the same TU.
 void __asan_before_dynamic_init(const char *module_name) {
-  if (!flags()->check_initialization_order ||
-      !CanPoisonMemory() ||
+  if (!flags()->check_initialization_order || !CanPoisonMemory() ||
       !dynamic_init_globals)
     return;
   bool strict_init_order = flags()->strict_init_order;
@@ -440,8 +453,7 @@ void __asan_before_dynamic_init(const char *module_name) {
 // all dynamically initialized globals except for those defined in the current
 // TU are poisoned.  It simply unpoisons all dynamically initialized globals.
 void __asan_after_dynamic_init() {
-  if (!flags()->check_initialization_order ||
-      !CanPoisonMemory() ||
+  if (!flags()->check_initialization_order || !CanPoisonMemory() ||
       !dynamic_init_globals)
     return;
   CHECK(asan_inited);

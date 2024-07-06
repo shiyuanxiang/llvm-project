@@ -43,16 +43,17 @@ static void ProtectGap(uptr addr, uptr size) {
 }
 
 static void MaybeReportLinuxPIEBug() {
-#if SANITIZER_LINUX && \
-    (defined(__x86_64__) || defined(__aarch64__) || SANITIZER_RISCV64)
+#  if SANITIZER_LINUX && \
+      (defined(__x86_64__) || defined(__aarch64__) || SANITIZER_RISCV64)
   Report("This might be related to ELF_ET_DYN_BASE change in Linux 4.12.\n");
   Report(
       "See https://github.com/google/sanitizers/issues/856 for possible "
       "workarounds.\n");
-#endif
+#  endif
 }
 
 void InitializeShadowMemory() {
+  Report("[asan_shadow_setup.cpp]\n");
   // Set the shadow memory address to uninitialized.
   __asan_shadow_memory_dynamic_address = kDefaultShadowSentinel;
 
@@ -64,26 +65,31 @@ void InitializeShadowMemory() {
   bool full_shadow_is_available = false;
   if (shadow_start == kDefaultShadowSentinel) {
     shadow_start = FindDynamicShadowStart();
-    if (SANITIZER_LINUX) full_shadow_is_available = true;
+    if (SANITIZER_LINUX)
+      full_shadow_is_available = true;
   }
   // Update the shadow memory address (potentially) used by instrumentation.
   __asan_shadow_memory_dynamic_address = shadow_start;
 
-  if (kLowShadowBeg) shadow_start -= GetMmapGranularity();
+  if (kLowShadowBeg)
+    shadow_start -= GetMmapGranularity();
 
   if (!full_shadow_is_available)
     full_shadow_is_available =
         MemoryRangeIsAvailable(shadow_start, kHighShadowEnd);
 
-#if SANITIZER_LINUX && defined(__x86_64__) && defined(_LP64) && \
-    !ASAN_FIXED_MAPPING
+#  if SANITIZER_LINUX && defined(__x86_64__) && defined(_LP64) && \
+      !ASAN_FIXED_MAPPING
   if (!full_shadow_is_available) {
     kMidMemBeg = kLowMemEnd < 0x3000000000ULL ? 0x3000000000ULL : 0;
     kMidMemEnd = kLowMemEnd < 0x3000000000ULL ? 0x4fffffffffULL : 0;
   }
-#endif
-
-  if (Verbosity()) PrintAddressSpaceLayout();
+#  endif
+  // [syx]
+  PrintAddressSpaceLayout();
+  //
+  if (Verbosity())
+    PrintAddressSpaceLayout();
 
   if (full_shadow_is_available) {
     // mmap the low shadow plus at least one page at the left.

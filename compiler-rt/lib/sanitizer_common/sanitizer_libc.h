@@ -28,12 +28,12 @@ namespace __sanitizer {
 s64 internal_atoll(const char *nptr);
 void *internal_memchr(const void *s, int c, uptr n);
 void *internal_memrchr(const void *s, int c, uptr n);
-int internal_memcmp(const void* s1, const void* s2, uptr n);
+int internal_memcmp(const void *s1, const void *s2, uptr n);
 void *internal_memcpy(void *dest, const void *src, uptr n);
 void *internal_memmove(void *dest, const void *src, uptr n);
 // Should not be used in performance-critical places.
 void *internal_memset(void *s, int c, uptr n);
-char* internal_strchr(const char *s, int c);
+char *internal_strchr(const char *s, int c);
 char *internal_strchrnul(const char *s, int c);
 int internal_strcmp(const char *s1, const char *s2);
 uptr internal_strcspn(const char *s, const char *reject);
@@ -57,11 +57,12 @@ uptr internal_wcsnlen(const wchar_t *s, uptr maxlen);
 // Return true if all bytes in [mem, mem+size) are zero.
 // Optimized for the case when the result is true.
 bool mem_is_zero(const char *mem, uptr size);
+int get_poison_size(const char *beg, uptr size);
 
 // I/O
 // Define these as macros so we can use them in linker initialized global
 // structs without dynamic initialization.
-#define kInvalidFd ((fd_t)-1)
+#define kInvalidFd ((fd_t) - 1)
 #define kStdinFd ((fd_t)0)
 #define kStdoutFd ((fd_t)1)
 #define kStderrFd ((fd_t)2)
@@ -84,6 +85,6 @@ uptr internal_sched_yield();
 // Error handling
 bool internal_iserror(uptr retval, int *rverrno = nullptr);
 
-} // namespace __sanitizer
+}  // namespace __sanitizer
 
-#endif // SANITIZER_LIBC_H
+#endif  // SANITIZER_LIBC_H

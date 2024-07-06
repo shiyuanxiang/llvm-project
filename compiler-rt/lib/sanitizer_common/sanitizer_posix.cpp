@@ -15,31 +15,29 @@
 
 #if SANITIZER_POSIX
 
-#include "sanitizer_common.h"
-#include "sanitizer_file.h"
-#include "sanitizer_flags.h"
-#include "sanitizer_libc.h"
-#include "sanitizer_posix.h"
-#include "sanitizer_procmaps.h"
+#  include <errno.h>
+#  include <fcntl.h>
+#  include <signal.h>
+#  include <sys/mman.h>
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/mman.h>
+#  include "sanitizer_common.h"
+#  include "sanitizer_file.h"
+#  include "sanitizer_flags.h"
+#  include "sanitizer_libc.h"
+#  include "sanitizer_posix.h"
+#  include "sanitizer_procmaps.h"
 
-#if SANITIZER_FREEBSD
+#  if SANITIZER_FREEBSD
 // The MAP_NORESERVE define has been removed in FreeBSD 11.x, and even before
 // that, it was never implemented.  So just define it to zero.
-#undef  MAP_NORESERVE
-#define MAP_NORESERVE 0
-#endif
+#    undef MAP_NORESERVE
+#    define MAP_NORESERVE 0
+#  endif
 
 namespace __sanitizer {
 
 // ------------- sanitizer_common.h
-uptr GetMmapGranularity() {
-  return GetPageSize();
-}
+uptr GetMmapGranularity() { return GetPageSize(); }
 
 bool ErrorIsOOM(error_t err) { return err == ENOMEM; }
 
@@ -55,7 +53,8 @@ void *MmapOrDie(uptr size, const char *mem_type, bool raw_report) {
 }
 
 void UnmapOrDie(void *addr, uptr size) {
-  if (!addr || !size) return;
+  if (!addr || !size)
+    return;
   uptr res = internal_munmap(addr, size);
   if (UNLIKELY(internal_iserror(res))) {
     Report("ERROR: %s failed to deallocate 0x%zx (%zd) bytes at address %p\n",
@@ -94,13 +93,13 @@ void *MmapAlignedOrDieOnFatalError(uptr size, uptr alignment,
   uptr res = map_res;
   if (!IsAligned(res, alignment)) {
     res = (map_res + alignment - 1) & ~(alignment - 1);
-    UnmapOrDie((void*)map_res, res - map_res);
+    UnmapOrDie((void *)map_res, res - map_res);
   }
   uptr end = res + size;
   end = RoundUpTo(end, GetPageSizeCached());
   if (end != map_end)
-    UnmapOrDie((void*)end, map_end - end);
-  return (void*)res;
+    UnmapOrDie((void *)end, map_end - end);
+  return (void *)res;
 }
 
 void *MmapNoReserveOrDie(uptr size, const char *mem_type) {
@@ -142,25 +141,31 @@ void *MmapFixedOrDieOnFatalError(uptr fixed_addr, uptr size, const char *name) {
 }
 
 bool MprotectNoAccess(uptr addr, uptr size) {
-  return 0 == internal_mprotect((void*)addr, size, PROT_NONE);
+  return 0 == internal_mprotect((void *)addr, size, PROT_NONE);
 }
 
 bool MprotectReadOnly(uptr addr, uptr size) {
   return 0 == internal_mprotect((void *)addr, size, PROT_READ);
 }
 
-#if !SANITIZER_APPLE
+#  if !SANITIZER_APPLE
 void MprotectMallocZones(void *addr, int prot) {}
-#endif
+#  endif
 
 fd_t OpenFile(const char *filename, FileAccessMode mode, error_t *errno_p) {
   if (ShouldMockFailureToOpen(filename))
     return kInvalidFd;
   int flags;
   switch (mode) {
-    case RdOnly: flags = O_RDONLY; break;
-    case WrOnly: flags = O_WRONLY | O_CREAT | O_TRUNC; break;
-    case RdWr: flags = O_RDWR | O_CREAT; break;
+    case RdOnly:
+      flags = O_RDONLY;
+      break;
+    case WrOnly:
+      flags = O_WRONLY | O_CREAT | O_TRUNC;
+      break;
+    case RdWr:
+      flags = O_RDWR | O_CREAT;
+      break;
   }
   fd_t res = internal_open(filename, flags, 0660);
   if (internal_iserror(res, errno_p))
@@ -168,9 +173,7 @@ fd_t OpenFile(const char *filename, FileAccessMode mode, error_t *errno_p) {
   return ReserveStandardFds(res);
 }
 
-void CloseFile(fd_t fd) {
-  internal_close(fd);
-}
+void CloseFile(fd_t fd) { internal_close(fd); }
 
 bool ReadFromFile(fd_t fd, void *buff, uptr buff_size, uptr *bytes_read,
                   error_t *error_p) {
@@ -205,19 +208,20 @@ void *MapFileToMemory(const char *file_name, uptr *buff_size) {
 
 void *MapWritableFileToMemory(void *addr, uptr size, fd_t fd, OFF_T offset) {
   uptr flags = MAP_SHARED;
-  if (addr) flags |= MAP_FIXED;
+  if (addr)
+    flags |= MAP_FIXED;
   uptr p = internal_mmap(addr, size, PROT_READ | PROT_WRITE, flags, fd, offset);
   int mmap_errno = 0;
   if (internal_iserror(p, &mmap_errno)) {
-    Printf("could not map writable file (%d, %lld, %zu): %zd, errno: %d\n",
-           fd, (long long)offset, size, p, mmap_errno);
+    Printf("could not map writable file (%d, %lld, %zu): %zd, errno: %d\n", fd,
+           (long long)offset, size, p, mmap_errno);
     return nullptr;
   }
   return (void *)p;
 }
 
-static inline bool IntervalsAreSeparate(uptr start1, uptr end1,
-                                        uptr start2, uptr end2) {
+static inline bool IntervalsAreSeparate(uptr start1, uptr end1, uptr start2,
+                                        uptr end2) {
   CHECK(start1 <= end1);
   CHECK(start2 <= end2);
   return (end1 < start2) || (end2 < start1);
@@ -228,12 +232,13 @@ static inline bool IntervalsAreSeparate(uptr start1, uptr end1,
 // several worker threads on Mac, which aren't expected to map big chunks of
 // memory).
 bool MemoryRangeIsAvailable(uptr range_start, uptr range_end) {
-  MemoryMappingLayout proc_maps(/*cache_enabled*/true);
+  MemoryMappingLayout proc_maps(/*cache_enabled*/ true);
   if (proc_maps.Error())
-    return true; // and hope for the best
+    return true;  // and hope for the best
   MemoryMappedSegment segment;
   while (proc_maps.Next(&segment)) {
-    if (segment.start == segment.end) continue;  // Empty range.
+    if (segment.start == segment.end)
+      continue;  // Empty range.
     CHECK_NE(0, segment.end);
     if (!IntervalsAreSeparate(segment.start, segment.end - 1, range_start,
                               range_end))
@@ -242,11 +247,11 @@ bool MemoryRangeIsAvailable(uptr range_start, uptr range_end) {
   return true;
 }
 
-#if !SANITIZER_APPLE
+#  if !SANITIZER_APPLE
 void DumpProcessMap() {
-  MemoryMappingLayout proc_maps(/*cache_enabled*/true);
+  MemoryMappingLayout proc_maps(/*cache_enabled*/ true);
   const sptr kBufSize = 4095;
-  char *filename = (char*)MmapOrDie(kBufSize, __func__);
+  char *filename = (char *)MmapOrDie(kBufSize, __func__);
   MemoryMappedSegment segment(filename, kBufSize);
   Report("Process memory map follows:\n");
   while (proc_maps.Next(&segment)) {
@@ -256,15 +261,11 @@ void DumpProcessMap() {
   Report("End of process memory map.\n");
   UnmapOrDie(filename, kBufSize);
 }
-#endif
+#  endif
 
-const char *GetPwd() {
-  return GetEnv("PWD");
-}
+const char *GetPwd() { return GetEnv("PWD"); }
 
-bool IsPathSeparator(const char c) {
-  return c == '/';
-}
+bool IsPathSeparator(const char c) { return c == '/'; }
 
 bool IsAbsolutePath(const char *path) {
   return path != nullptr && IsPathSeparator(path[0]);
@@ -277,7 +278,7 @@ void ReportFile::Write(const char *buffer, uptr length) {
 }
 
 bool GetCodeRangeForFile(const char *module, uptr *start, uptr *end) {
-  MemoryMappingLayout proc_maps(/*cache_enabled*/false);
+  MemoryMappingLayout proc_maps(/*cache_enabled*/ false);
   InternalMmapVector<char> buff(kMaxPathLength);
   MemoryMappedSegment segment(buff.data(), buff.size());
   while (proc_maps.Next(&segment)) {
@@ -344,7 +345,7 @@ bool ShouldMockFailureToOpen(const char *path) {
          internal_strncmp(path, "/proc/", 6) == 0;
 }
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID && !SANITIZER_GO
+#  if SANITIZER_LINUX && !SANITIZER_ANDROID && !SANITIZER_GO
 int GetNamedMappingFd(const char *name, uptr size, int *flags) {
   if (!common_flags()->decorate_proc_maps || !name)
     return -1;
@@ -353,51 +354,48 @@ int GetNamedMappingFd(const char *name, uptr size, int *flags) {
   internal_snprintf(shmname, sizeof(shmname), "/dev/shm/%zu [%s]",
                     internal_getpid(), name);
   int o_cloexec = 0;
-#if defined(O_CLOEXEC)
+#    if defined(O_CLOEXEC)
   o_cloexec = O_CLOEXEC;
-#endif
+#    endif
   int fd = ReserveStandardFds(
       internal_open(shmname, O_RDWR | O_CREAT | O_TRUNC | o_cloexec, S_IRWXU));
   CHECK_GE(fd, 0);
   int res = internal_ftruncate(fd, size);
-#if !defined(O_CLOEXEC)
+#    if !defined(O_CLOEXEC)
   res = fcntl(fd, F_SETFD, FD_CLOEXEC);
   CHECK_EQ(0, res);
-#endif
+#    endif
   CHECK_EQ(0, res);
   res = internal_unlink(shmname);
   CHECK_EQ(0, res);
   *flags &= ~(MAP_ANON | MAP_ANONYMOUS);
   return fd;
 }
-#else
-int GetNamedMappingFd(const char *name, uptr size, int *flags) {
-  return -1;
-}
-#endif
+#  else
+int GetNamedMappingFd(const char *name, uptr size, int *flags) { return -1; }
+#  endif
 
-#if SANITIZER_ANDROID
-#define PR_SET_VMA 0x53564d41
-#define PR_SET_VMA_ANON_NAME 0
+#  if SANITIZER_ANDROID
+#    define PR_SET_VMA 0x53564d41
+#    define PR_SET_VMA_ANON_NAME 0
 void DecorateMapping(uptr addr, uptr size, const char *name) {
   if (!common_flags()->decorate_proc_maps || !name)
     return;
   internal_prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, addr, size, (uptr)name);
 }
-#else
-void DecorateMapping(uptr addr, uptr size, const char *name) {
-}
-#endif
+#  else
+void DecorateMapping(uptr addr, uptr size, const char *name) {}
+#  endif
 
 uptr MmapNamed(void *addr, uptr length, int prot, int flags, const char *name) {
   int fd = GetNamedMappingFd(name, length, &flags);
+  //[syx]
   uptr res = internal_mmap(addr, length, prot, flags, fd, 0);
   if (!internal_iserror(res))
     DecorateMapping(res, length, name);
   return res;
 }
 
+}  // namespace __sanitizer
 
-} // namespace __sanitizer
-
-#endif // SANITIZER_POSIX
+#endif  // SANITIZER_POSIX
