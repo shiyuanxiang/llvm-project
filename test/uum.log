@@ -1,0 +1,201 @@
+[MemorySanitizer.cpp] setShadow() V:   %0 = call i32 @__cxa_atexit(ptr @_ZNSt8ios_base4InitD1Ev, ptr @_ZStL8__ioinit, ptr @__dso_handle) #3, !dbg !874 
+[MemorySanitizer.cpp] setShadow() V:   %retval = alloca i32, align 4 
+[MemorySanitizer.cpp] setShadow() V:   %array = alloca ptr, align 8 
+[MemorySanitizer.cpp] setShadow() V:   %value = alloca i32, align 4 
+[MemorySanitizer.cpp] getShadow() V:   %retval = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.dbg.declare(metadata ptr %array, metadata !877, metadata !DIExpression()), !dbg !878 
+[MemorySanitizer.cpp] setShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #11, !dbg !875 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %0 = load ptr, ptr %array, align 8, !dbg !876 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.dbg.declare(metadata ptr %value, metadata !883, metadata !DIExpression()), !dbg !884 
+[MemorySanitizer.cpp] setShadow() V:   %5 = load ptr, ptr %array, align 8, !dbg !881 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %5 = load ptr, ptr %array, align 8, !dbg !881 Shadow:   %_msld2 = load i64, ptr %8, align 8, !dbg !881
+[MemorySanitizer.cpp] setShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3, !dbg !881 
+[MemorySanitizer.cpp] setShadow() V:   %9 = load i32, ptr %arrayidx, align 4, !dbg !881 
+[MemorySanitizer.cpp] getShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3, !dbg !881 Shadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %13 = load i32, ptr %value, align 4, !dbg !882 
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %13 = load i32, ptr %value, align 4, !dbg !882 Shadow:   %_msld4 = load i32, ptr %16, align 4, !dbg !882
+[MemorySanitizer.cpp] setShadow() V:   %tobool = icmp ne i32 %13, 0, !dbg !882 
+[MemorySanitizer.cpp] getShadow() V:   %tobool = icmp ne i32 %13, 0, !dbg !882 Shadow:   %_msprop_icmp = and i1 %22, %21, !dbg !882
+[MemorySanitizer.cpp] setShadow() V:   br i1 %tobool, label %if.then, label %if.end, !dbg !884 
+[MemorySanitizer.cpp] setShadow() V:   %call1 = call noundef nonnull align 8 dereferenceable(8) ptr @_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc(ptr noundef nonnull align 8 dereferenceable(8) @_ZSt4cout, ptr noundef @.str), !dbg !885 
+[MemorySanitizer.cpp] setShadow() V:   br label %if.end, !dbg !887 
+[MemorySanitizer.cpp] setShadow() V:   %23 = load ptr, ptr %array, align 8, !dbg !888 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %23 = load ptr, ptr %array, align 8, !dbg !888 Shadow:   %_msld6 = load i64, ptr %26, align 8, !dbg !889
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 4, ptr %value) #3, !dbg !890 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 8, ptr %array) #3, !dbg !890 
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5630a9e6bad0 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %array = alloca ptr, align 8 Len: i64 8
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5630a9e6b740 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %value = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5630a987c7c0 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %retval = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   %18 = load i32, ptr %arrayidx, align 4, !dbg !881
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] convertToBool: VTy: i64
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_mscmp = icmp ne i64 %_msprop, 250, !dbg !881
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   br i1 %tobool, label %if.then, label %if.end, !dbg !885
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] convertToBool: VTy: i1
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %5, align 4 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #11, !dbg !875 Shadow:   %_msret = load i64, ptr @__msan_retval_tls, align 8, !dbg !873
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %11, align 8, !dbg !873 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %28 = load i32, ptr %arrayidx, align 4, !dbg !881 Shadow:   %_msld3 = load i32, ptr %31, align 4, !dbg !879
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %34, align 4, !dbg !879 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] setShadow() V:   %0 = call i32 @__cxa_atexit(ptr @_ZNSt8ios_base4InitD1Ev, ptr @_ZStL8__ioinit, ptr @__dso_handle) #3 
+[MemorySanitizer.cpp] setShadow() V:   %retval = alloca i32, align 4 
+[MemorySanitizer.cpp] setShadow() V:   %array = alloca ptr, align 8 
+[MemorySanitizer.cpp] setShadow() V:   %value = alloca i32, align 4 
+[MemorySanitizer.cpp] getShadow() V:   %retval = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #10 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %0 = load ptr, ptr %array, align 8 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %5 = load ptr, ptr %array, align 8 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %5 = load ptr, ptr %array, align 8 Shadow:   %_msld2 = load i64, ptr %8, align 8
+[MemorySanitizer.cpp] setShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3 
+[MemorySanitizer.cpp] setShadow() V:   %9 = load i32, ptr %arrayidx, align 4 
+[MemorySanitizer.cpp] getShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3 Shadow:   %_msprop = or i64 %_msld2, 0
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %13 = load i32, ptr %value, align 4 
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %13 = load i32, ptr %value, align 4 Shadow:   %_msld4 = load i32, ptr %16, align 4
+[MemorySanitizer.cpp] setShadow() V:   %tobool = icmp ne i32 %13, 0 
+[MemorySanitizer.cpp] getShadow() V:   %tobool = icmp ne i32 %13, 0 Shadow:   %_msprop_icmp = and i1 %22, %21
+[MemorySanitizer.cpp] setShadow() V:   br i1 %tobool, label %if.then, label %if.end 
+[MemorySanitizer.cpp] setShadow() V:   %call1 = call noundef nonnull align 8 dereferenceable(8) ptr @_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc(ptr noundef nonnull align 8 dereferenceable(8) @_ZSt4cout, ptr noundef @.str) 
+[MemorySanitizer.cpp] setShadow() V:   br label %if.end 
+[MemorySanitizer.cpp] setShadow() V:   %23 = load ptr, ptr %array, align 8 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %23 = load ptr, ptr %array, align 8 Shadow:   %_msld6 = load i64, ptr %26, align 8
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 4, ptr %value) #3 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 8, ptr %array) #3 
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5638348b7990 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %array = alloca ptr, align 8 Len: i64 8
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x56383490b710 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %value = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x563833e3aba0 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %retval = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   %18 = load i32, ptr %arrayidx, align 4
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop = or i64 %_msld2, 0
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop = or i64 %_msld2, 0
+[MemorySanitizer.cpp] convertToBool: VTy: i64
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_mscmp = icmp ne i64 %_msprop, 250
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   br i1 %tobool, label %if.then, label %if.end
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop_icmp = and i1 %35, %34
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop_icmp = and i1 %35, %34
+[MemorySanitizer.cpp] convertToBool: VTy: i1
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_msprop_icmp = and i1 %35, %34
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %5, align 4 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #10 Shadow:   %_msret = load i64, ptr @__msan_retval_tls, align 8
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %11, align 8 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %28 = load i32, ptr %arrayidx, align 4 Shadow:   %_msld3 = load i32, ptr %31, align 4
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %34, align 4 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] setShadow() V:   %0 = call i32 @__cxa_atexit(ptr @_ZNSt8ios_base4InitD1Ev, ptr @_ZStL8__ioinit, ptr @__dso_handle) #3, !dbg !874 
+[MemorySanitizer.cpp] setShadow() V:   %retval = alloca i32, align 4 
+[MemorySanitizer.cpp] setShadow() V:   %array = alloca ptr, align 8 
+[MemorySanitizer.cpp] setShadow() V:   %value = alloca i32, align 4 
+[MemorySanitizer.cpp] getShadow() V:   %retval = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.dbg.declare(metadata ptr %array, metadata !877, metadata !DIExpression()), !dbg !878 
+[MemorySanitizer.cpp] setShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #11, !dbg !875 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %0 = load ptr, ptr %array, align 8, !dbg !876 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.dbg.declare(metadata ptr %value, metadata !883, metadata !DIExpression()), !dbg !884 
+[MemorySanitizer.cpp] setShadow() V:   %5 = load ptr, ptr %array, align 8, !dbg !881 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %5 = load ptr, ptr %array, align 8, !dbg !881 Shadow:   %_msld2 = load i64, ptr %8, align 8, !dbg !881
+[MemorySanitizer.cpp] setShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3, !dbg !881 
+[MemorySanitizer.cpp] setShadow() V:   %9 = load i32, ptr %arrayidx, align 4, !dbg !881 
+[MemorySanitizer.cpp] getShadow() V:   %arrayidx = getelementptr inbounds i32, ptr %5, i64 3, !dbg !881 Shadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   %13 = load i32, ptr %value, align 4, !dbg !882 
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %13 = load i32, ptr %value, align 4, !dbg !882 Shadow:   %_msld4 = load i32, ptr %16, align 4, !dbg !882
+[MemorySanitizer.cpp] setShadow() V:   %tobool = icmp ne i32 %13, 0, !dbg !882 
+[MemorySanitizer.cpp] getShadow() V:   %tobool = icmp ne i32 %13, 0, !dbg !882 Shadow:   %_msprop_icmp = and i1 %22, %21, !dbg !882
+[MemorySanitizer.cpp] setShadow() V:   br i1 %tobool, label %if.then, label %if.end, !dbg !884 
+[MemorySanitizer.cpp] setShadow() V:   %call1 = call noundef nonnull align 8 dereferenceable(8) ptr @_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc(ptr noundef nonnull align 8 dereferenceable(8) @_ZSt4cout, ptr noundef @.str), !dbg !885 
+[MemorySanitizer.cpp] setShadow() V:   br label %if.end, !dbg !887 
+[MemorySanitizer.cpp] setShadow() V:   %23 = load ptr, ptr %array, align 8, !dbg !888 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] getShadow() V:   %23 = load ptr, ptr %array, align 8, !dbg !888 Shadow:   %_msld6 = load i64, ptr %26, align 8, !dbg !889
+[MemorySanitizer.cpp] getShadow() V:   %value = alloca i32, align 4 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 4, ptr %value) #3, !dbg !890 
+[MemorySanitizer.cpp] getShadow() V:   %array = alloca ptr, align 8 Shadow: i64 0
+[MemorySanitizer.cpp] setShadow() V:   call void @llvm.lifetime.end.p0(i64 8, ptr %array) #3, !dbg !890 
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5634a96f17b0 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %array = alloca ptr, align 8 Len: i64 8
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5634a99dbb50 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %value = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] poisonAllocaUserspace: ShadowBase: 0x5634a99db7b0 PoisonValue: i8 -1 
+[MemorySanitizer.cpp] instrumentAlloca: I<AllocaUserspace>:   %retval = alloca i32, align 4 Len: i64 4
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   %18 = load i32, ptr %arrayidx, align 4, !dbg !881
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop = or i64 %_msld2, 0, !dbg !881
+[MemorySanitizer.cpp] convertToBool: VTy: i64
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_mscmp = icmp ne i64 %_msprop, 250, !dbg !881
+[MemorySanitizer.cpp] materializeChecks: OrigIns:   br i1 %tobool, label %if.then, label %if.end, !dbg !885
+[MemorySanitizer.cpp] materializeOneCheck: Shadow:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] materializeOneCheck: ConvertedShadow:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] convertToBool: VTy: i1
+[MemorySanitizer.cpp] materializeOneCheck: Cmp:   %_msprop_icmp = and i1 %35, %34, !dbg !883
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %5, align 4 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %call = call noalias ptr @malloc(i64 noundef 48) #11, !dbg !875 Shadow:   %_msret = load i64, ptr @__msan_retval_tls, align 8, !dbg !873
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %11, align 8, !dbg !873 SI->isAtomic(): 0 Shadow: i64 250
+[MemorySanitizer.cpp] getShadow() V:   %28 = load i32, ptr %arrayidx, align 4, !dbg !881 Shadow:   %_msld3 = load i32, ptr %31, align 4, !dbg !879
+[MemorySanitizer.cpp] materializeStores: NewSI:   store i64 250, ptr %34, align 4, !dbg !879 SI->isAtomic(): 0 Shadow: i64 250
+=============================msan.out=============================
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ffc390a5000, shadow_end=0x2ffc398a5000, value=250, size=8388608
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d2000, shadow_end=0x2ff51b3d4080, value=250, size=8320
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ffc398a36d0, shadow_end=0x2ffc398a36e0, value=250, size=16
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x231000000000, shadow_end=0x231000011c00, value=255, size=72704
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x203000000000, shadow_end=0x203000000030, value=255, size=48
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x203000000000, shadow_end=0x203000000014, value=250, size=20
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x218000000000, shadow_end=0x218000000400, value=255, size=1024
+  *_msprop = or i64 *_msld2, 0, !dbg !881 : fa
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+  *_mscmp = icmp ne i64 *_msprop, 250, !dbg !881 : 0
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+  *_msprop_icmp = and i1 *35, *34, !dbg !883 : 0
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+ok, no uum
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x203000000000, shadow_end=0x203000000030, value=255, size=48
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c56a0, shadow_end=0x2ff51b5c5718, value=250, size=120
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c55c0, shadow_end=0x2ff51b5c5638, value=250, size=120
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c55c0, shadow_end=0x2ff51b5c5638, value=250, size=120
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c56a0, shadow_end=0x2ff51b5c5718, value=250, size=120
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c55c0, shadow_end=0x2ff51b5c5638, value=250, size=120
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b3d26c0, shadow_end=0x2ff51b3d26c4, value=250, size=4
+==3310308==[msan_poisoning.cpp] SetShadow1: shadow_beg=0x2ff51b5c55c0, shadow_end=0x2ff51b5c5638, value=250, size=120
